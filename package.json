@@ -6,12 +6,18 @@
   "scripts": {
     "dev": "pnpm --filter portal dev",
     "dev:iot": "pnpm --filter ./apps/iot dev",
+    "dev:studio": "pnpm --filter ./apps/studio dev",
+    "dev:studio:platform": "pnpm --filter ./apps/studio dev:platform",
+    "dev:studio:standalone": "pnpm --filter ./apps/studio dev:standalone",
     "dev:all": "bash -lc 'pnpm --filter portal dev & pnpm --filter ./apps/iot dev:platform & wait'",
     "build": "pnpm --filter portal build",
     "build:iot": "pnpm --filter ./apps/iot build",
+    "build:studio": "pnpm --filter ./apps/studio build",
     "lint": "pnpm --filter portal lint",
     "lint:iot": "pnpm --filter ./apps/iot lint",
+    "lint:studio": "pnpm --filter ./apps/studio lint",
     "typecheck": "pnpm --filter portal typecheck",
-    "typecheck:iot": "pnpm --filter ./apps/iot typecheck"
+    "typecheck:iot": "pnpm --filter ./apps/iot typecheck",
+    "typecheck:studio": "pnpm --filter ./apps/studio typecheck"
   }
 }

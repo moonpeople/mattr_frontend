@@ -11,7 +11,6 @@ import {
   useState,
 } from 'react'
 import { clearLocalStorage } from './constants/local-storage'
-import { IS_PLATFORM } from './constants/environment'
 import { gotrueClient, type User } from './gotrue'
 
 export type { User }
@@ -167,7 +166,6 @@ gotrueClient.onAuthStateChange((event, session) => {
 export async function getAccessToken() {
   // ignore if server-side
   if (typeof window === 'undefined') return undefined
-  if (!IS_PLATFORM) return undefined
 
   const {
     data: { session },
