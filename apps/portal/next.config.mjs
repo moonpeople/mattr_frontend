@@ -6,6 +6,7 @@ const __dirname = path.dirname(__filename)
 
 const disableHcaptcha = process.env.NEXT_PUBLIC_ENABLE_HCAPTCHA !== 'true'
 const iotStudioUrl = process.env.IOT_STUDIO_URL || process.env.NEXT_PUBLIC_IOT_STUDIO_URL
+const studioUrl = process.env.STUDIO_URL || process.env.NEXT_PUBLIC_STUDIO_URL
 
 /** Minimal Next.js config for the portal shell. */
 const nextConfig = {
@@ -14,28 +15,42 @@ const nextConfig = {
     externalDir: true
   },
   async redirects() {
-    if (!iotStudioUrl) {
-      return []
+    const rules = []
+
+    if (iotStudioUrl) {
+      rules.push(
+        {
+          source: '/iot/:ref([a-z0-9-]{16,36})',
+          destination: '/iot/project/:ref',
+          permanent: false,
+        },
+        {
+          source: '/iot/:ref([a-z0-9-]{16,36})/:path*',
+          destination: '/iot/project/:ref/:path*',
+          permanent: false,
+        }
+      )
     }
 
-    return [
-      {
-        source: '/iot/:ref([a-z0-9-]{16,36})',
-        destination: '/iot/project/:ref',
-        permanent: false,
-      },
-      {
-        source: '/iot/:ref([a-z0-9-]{16,36})/:path*',
-        destination: '/iot/project/:ref/:path*',
-        permanent: false,
-      },
-    ]
+    if (studioUrl) {
+      rules.push(
+        {
+          source: '/studio/:ref([a-z0-9-]{16,36})',
+          destination: '/studio/project/:ref',
+          permanent: false,
+        },
+        {
+          source: '/studio/:ref([a-z0-9-]{16,36})/:path*',
+          destination: '/studio/project/:ref/:path*',
+          permanent: false,
+        }
+      )
+    }
+
+    return rules
   },
   async rewrites() {
-    const rules = [
-      { source: '/base/:ref', destination: '/project/:ref' },
-      { source: '/base/:ref/:path*', destination: '/project/:ref/:path*' },
-    ]
+    const rules = []
 
     if (iotStudioUrl) {
       rules.unshift(
@@ -51,6 +66,23 @@ const nextConfig = {
           destination: `${iotStudioUrl}/iot/project/:ref/:path*`,
         },
         { source: '/iot/:path*', destination: `${iotStudioUrl}/iot/:path*` }
+      )
+    }
+
+    if (studioUrl) {
+      rules.unshift(
+        { source: '/studio/_next/:path*', destination: `${studioUrl}/studio/_next/:path*` },
+        { source: '/studio/static/:path*', destination: `${studioUrl}/studio/static/:path*` },
+        { source: '/studio/favicon.ico', destination: `${studioUrl}/studio/favicon.ico` },
+        {
+          source: '/studio/:ref([a-z0-9-]{16,36})',
+          destination: `${studioUrl}/studio/project/:ref`,
+        },
+        {
+          source: '/studio/:ref([a-z0-9-]{16,36})/:path*',
+          destination: `${studioUrl}/studio/project/:ref/:path*`,
+        },
+        { source: '/studio/:path*', destination: `${studioUrl}/studio/:path*` }
       )
     }
 

@@ -17,5 +17,5 @@ export const getProjectHref = (project: ProjectLike) => {
   const projectType = getProjectType(project)
 
   if (projectType === 'iot') return `/iot/project/${project.ref}`
-  return `/base/${project.ref}`
+  return `/studio/project/${project.ref}`
 }
