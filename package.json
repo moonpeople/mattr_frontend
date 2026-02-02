@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "pnpm --filter portal dev",
     "dev:iot": "pnpm --filter ./apps/iot dev",
+    "dev:all": "bash -lc 'pnpm --filter portal dev & pnpm --filter ./apps/iot dev:platform & wait'",
     "build": "pnpm --filter portal build",
     "build:iot": "pnpm --filter ./apps/iot build",
     "lint": "pnpm --filter portal lint",

@@ -21,16 +21,14 @@ function safeGetLocalStorage(key: string) {
   }
 }
 
-const debug =
-  process.env.NEXT_PUBLIC_IS_PLATFORM === 'true' && safeGetLocalStorage(AUTH_DEBUG_KEY) === 'true'
+const isPlatform = process.env.NEXT_PUBLIC_IS_PLATFORM === 'true'
 
-const persistedDebug =
-  process.env.NEXT_PUBLIC_IS_PLATFORM === 'true' &&
-  safeGetLocalStorage(AUTH_DEBUG_PERSISTED_KEY) === 'true'
+const debug = isPlatform && safeGetLocalStorage(AUTH_DEBUG_KEY) === 'true'
+
+const persistedDebug = isPlatform && safeGetLocalStorage(AUTH_DEBUG_PERSISTED_KEY) === 'true'
 
 const shouldEnableNavigatorLock =
-  process.env.NEXT_PUBLIC_IS_PLATFORM === 'true' &&
-  !(safeGetLocalStorage(AUTH_NAVIGATOR_LOCK_DISABLED_KEY) === 'true')
+  isPlatform && !(safeGetLocalStorage(AUTH_NAVIGATOR_LOCK_DISABLED_KEY) === 'true')
 
 const shouldDetectSessionInUrl = process.env.NEXT_PUBLIC_AUTH_DETECT_SESSION_IN_URL
   ? process.env.NEXT_PUBLIC_AUTH_DETECT_SESSION_IN_URL === 'true'
@@ -203,12 +201,14 @@ async function debuggableNavigatorLock<R>(
 export const gotrueClient = new AuthClient({
   url: process.env.NEXT_PUBLIC_GOTRUE_URL,
   storageKey: STORAGE_KEY,
-  detectSessionInUrl: shouldDetectSessionInUrl,
+  detectSessionInUrl: isPlatform ? shouldDetectSessionInUrl : false,
+  autoRefreshToken: isPlatform,
+  persistSession: isPlatform,
   debug: debug ? (persistedDebug ? logIndexedDB : true) : false,
   lock: navigatorLockEnabled ? debuggableNavigatorLock : undefined,
-  ...('localStorage' in globalThis
+  ...(isPlatform && 'localStorage' in globalThis
     ? { storage: globalThis.localStorage, userStorage: globalThis.localStorage }
-    : null),
+    : {}),
 })
 
 export type { User }

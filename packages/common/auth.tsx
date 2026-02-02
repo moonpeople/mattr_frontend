@@ -11,6 +11,7 @@ import {
   useState,
 } from 'react'
 import { clearLocalStorage } from './constants/local-storage'
+import { IS_PLATFORM } from './constants/environment'
 import { gotrueClient, type User } from './gotrue'
 
 export type { User }
@@ -159,27 +160,22 @@ gotrueClient.onAuthStateChange((event, session) => {
 })
 
 /**
- * Grabs the currently available access token, or calls getSession.
+ * Gets a current access token.
+ *
+ * Calls getSession, which will refresh the token if needed.
  */
 export async function getAccessToken() {
   // ignore if server-side
   if (typeof window === 'undefined') return undefined
+  if (!IS_PLATFORM) return undefined
 
-  const aboutToExpire = currentSession?.expires_at
-    ? currentSession.expires_at - Math.ceil(Date.now() / 1000) < 30
-    : false
-
-  if (!currentSession || aboutToExpire) {
-    const {
-      data: { session },
-      error,
-    } = await gotrueClient.getSession()
-    if (error) {
-      throw error
-    }
-
-    return session?.access_token
+  const {
+    data: { session },
+    error,
+  } = await gotrueClient.getSession()
+  if (error) {
+    throw error
   }
 
-  return currentSession.access_token
+  return session?.access_token
 }

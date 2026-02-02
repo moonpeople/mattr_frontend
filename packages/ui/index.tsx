@@ -45,6 +45,7 @@ export * from './src/lib/utils'
 // DATA ENTRY
 
 export * from './src/components/Select'
+export * from './src/components/SelectField'
 export * from './src/components/Listbox'
 export * from './src/components/Checkbox'
 export * from './src/components/Input'

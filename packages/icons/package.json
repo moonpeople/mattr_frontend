@@ -7,13 +7,13 @@
     "clean": "rimraf node_modules"
   },
   "dependencies": {
-    "typescript": "5.3.3",
+    "typescript": "catalog:",
     "@supabase/build-icons": "workspace:*"
   },
   "devDependencies": {
-    "@types/react": "18.2.54"
+    "@types/react": "catalog:"
   },
   "peerDependencies": {
-    "react": "18.2.0"
+    "react": "catalog:"
   }
 }
