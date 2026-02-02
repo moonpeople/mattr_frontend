@@ -1,0 +1,16 @@
+{
+  "name": "mattr-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.24.0",
+  "scripts": {
+    "dev": "pnpm --filter portal dev",
+    "dev:iot": "pnpm --filter ./apps/iot dev",
+    "build": "pnpm --filter portal build",
+    "build:iot": "pnpm --filter ./apps/iot build",
+    "lint": "pnpm --filter portal lint",
+    "lint:iot": "pnpm --filter ./apps/iot lint",
+    "typecheck": "pnpm --filter portal typecheck",
+    "typecheck:iot": "pnpm --filter ./apps/iot typecheck"
+  }
+}

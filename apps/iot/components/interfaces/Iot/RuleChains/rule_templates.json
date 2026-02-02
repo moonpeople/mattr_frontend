@@ -1,0 +1,104 @@
+[
+  {
+    "id": "default_telemetry",
+    "name": "Default telemetry",
+    "description": "Stores telemetry",
+    "type": "core",
+    "root": false,
+    "metadata": {
+      "version": 1,
+      "metadata": {
+        "firstNodeIndex": 2,
+        "nodes": [
+          {
+            "additionalInfo": { "layoutX": 824, "layoutY": 156 },
+            "type": "Telemetry.MsgTimeseriesNode",
+            "name": "Save Timeseries",
+            "configurationVersion": 1,
+            "configuration": {
+              "deviceIdPath": "device_id",
+              "useServerTs": true,
+              "tsPath": "",
+              "values": []
+            }
+          },
+          {
+            "additionalInfo": { "layoutX": 825, "layoutY": 52 },
+            "type": "Telemetry.MsgAttributesNode",
+            "name": "Save Client Attributes",
+            "configurationVersion": 3,
+            "configuration": {
+              "processingSettings": { "type": "ON_EVERY_MESSAGE" },
+              "scope": "CLIENT_SCOPE",
+              "notifyDevice": false,
+              "sendAttributesUpdatedNotification": false,
+              "updateAttributesOnlyOnValueChange": true,
+              "attributes": []
+            }
+          },
+          {
+            "additionalInfo": { "layoutX": 347, "layoutY": 149 },
+            "type": "Filter.MsgTypeSwitchNode",
+            "name": "Message Type Switch",
+            "configuration": {
+              "version": 1,
+              "mappings": [
+                { "type": "telemetry", "relation": "Post telemetry" },
+                { "type": "attributes", "relation": "Post attributes" },
+                { "type": "gateway_telemetry", "relation": "Post telemetry" },
+                { "type": "gateway_attributes", "relation": "Post attributes" },
+                { "type": "rpc_request", "relation": "RPC Request from Device" },
+                { "type": "rpc_response", "relation": "RPC Request to Device" }
+              ]
+            }
+          },
+          {
+            "additionalInfo": { "layoutX": 825, "layoutY": 266 },
+            "type": "Action.LogNode",
+            "name": "Log RPC from Device",
+            "configuration": {
+              "scriptLang": "TBEL",
+              "jsScript": "return '\\nIncoming message:\\n' + JSON.stringify(msg) + '\\nIncoming metadata:\\n' + JSON.stringify(metadata);",
+              "tbelScript": "return '\\nIncoming message:\\n' + JSON.stringify(msg) + '\\nIncoming metadata:\\n' + JSON.stringify(metadata);"
+            }
+          },
+          {
+            "additionalInfo": { "layoutX": 825, "layoutY": 379 },
+            "type": "Action.LogNode",
+            "name": "Log Other",
+            "configuration": {
+              "scriptLang": "TBEL",
+              "jsScript": "return '\\nIncoming message:\\n' + JSON.stringify(msg) + '\\nIncoming metadata:\\n' + JSON.stringify(metadata);",
+              "tbelScript": "return '\\nIncoming message:\\n' + JSON.stringify(msg) + '\\nIncoming metadata:\\n' + JSON.stringify(metadata);"
+            }
+          },
+          {
+            "additionalInfo": { "layoutX": 825, "layoutY": 468 },
+            "type": "Rpc.SendRPCRequestNode",
+            "name": "RPC Call Request",
+            "configuration": { "timeoutInSeconds": 60 }
+          }
+        ],
+        "connections": [
+          { "fromIndex": 2, "toIndex": 4, "type": "Other" },
+          { "fromIndex": 2, "toIndex": 1, "type": "Post attributes" },
+          { "fromIndex": 2, "toIndex": 0, "type": "Post telemetry" },
+          { "fromIndex": 2, "toIndex": 3, "type": "RPC Request from Device" },
+          { "fromIndex": 2, "toIndex": 5, "type": "RPC Request to Device" }
+        ],
+        "ruleChainConnections": []
+      }
+    },
+    "test": {
+      "protocol": "http",
+      "messages": [
+        {
+          "name": "Message 1",
+          "headers": { "x-device-id": "1" },
+          "body": { "device_id": 1, "ts": 1700000000000, "values": { "temp": 22 } },
+          "message_type": ""
+        }
+      ]
+    }
+  }
+]

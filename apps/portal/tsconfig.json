@@ -1,0 +1,78 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "types": [
+      "node"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "fonts": [
+        "./fonts"
+      ],
+      "fonts/*": [
+        "./fonts/*"
+      ],
+      "@ui/*": [
+        "../../packages/ui/src/*"
+      ],
+      "mattr_studio_pages/*": [
+        "./pages/*"
+      ],
+      "ui-patterns/*": [
+        "../../packages/ui-patterns/src/*"
+      ],
+      "icons/*": [
+        "../../packages/icons/src/*"
+      ],
+      "common/*": [
+        "../../packages/common/src/*"
+      ],
+      "shared-data/*": [
+        "../../packages/shared-data/src/*"
+      ],
+      "config/*": [
+        "../../packages/config/src/*"
+      ],
+      "api-types/*": [
+        "../../packages/api-types/src/*"
+      ],
+      "ai-commands/*": [
+        "../../packages/ai-commands/src/*"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
