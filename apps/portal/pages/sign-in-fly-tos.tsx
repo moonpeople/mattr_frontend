@@ -78,8 +78,8 @@ const SignInFlyTos = () => {
                   <Image
                     src={
                       resolvedTheme?.includes('dark')
-                        ? `${BASE_PATH}/img/supabase-dark.svg`
-                        : `${BASE_PATH}/img/supabase-light.svg`
+                        ? `${BASE_PATH}/img/mattr-dark.svg`
+                        : `${BASE_PATH}/img/mattr-light.svg`
                     }
                     alt=""
                     height={24}

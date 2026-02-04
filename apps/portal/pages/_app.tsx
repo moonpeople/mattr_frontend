@@ -134,9 +134,9 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
               >
                 <ProfileProvider>
                   <Head>
-                    <title>{appTitle ?? 'Supabase'}</title>
+                    <title>{appTitle ?? 'Mattr'}</title>
                     <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-                    <meta property="og:image" content={`${BASE_PATH}/img/supabase-logo.png`} />
+                    <meta property="og:image" content={`${BASE_PATH}/img/og-mattr.png`} />
                     <meta name="googlebot" content="notranslate" />
                     {/* [Alaister]: This has to be an inline style tag here and not a separate component due to next/font */}
                     <style
@@ -153,7 +153,7 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
                       />
                     )}
                   </Head>
-                  <MetaFaviconsPagesRouter applicationName="Supabase Studio" includeManifest />
+                  <MetaFaviconsPagesRouter applicationName="Mattr" includeManifest />
                   <TooltipProvider delayDuration={0}>
                     <RouteValidationWrapper>
                       <ThemeProvider

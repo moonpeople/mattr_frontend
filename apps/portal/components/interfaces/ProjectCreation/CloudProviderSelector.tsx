@@ -22,6 +22,7 @@ interface CloudProviderSelectorProps {
 
 export const CloudProviderSelector = ({ form }: CloudProviderSelectorProps) => {
   const { infraCloudProviders: validCloudProviders } = useCustomContent(['infra:cloud_providers'])
+  const localProviderEnabled = process.env.NODE_ENV !== 'production'
 
   return (
     <Panel.Content>
@@ -42,7 +43,10 @@ export const CloudProviderSelector = ({ form }: CloudProviderSelectorProps) => {
               <SelectContent_Shadcn_>
                 <SelectGroup_Shadcn_>
                   {Object.values(PROVIDERS)
-                    .filter((provider) => validCloudProviders?.includes(provider.id) ?? true)
+                    .filter((provider) => {
+                      if (provider.id === PROVIDERS.LOCAL.id) return localProviderEnabled
+                      return validCloudProviders?.includes(provider.id) ?? true
+                    })
                     .map((providerObj) => {
                       const label = providerObj['name']
                       const value = providerObj['id']

@@ -30,8 +30,9 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import timezone from 'dayjs/plugin/timezone'
 import utc from 'dayjs/plugin/utc'
 import Head from 'next/head'
+import Router from 'next/router'
 import { NuqsAdapter } from 'nuqs/adapters/next/pages'
-import { type ComponentProps, ErrorInfo, useCallback } from 'react'
+import { type ComponentProps, ErrorInfo, useCallback, useEffect } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 
 import {
@@ -55,7 +56,7 @@ import { customFont, sourceCodePro } from 'fonts'
 import { useCustomContent } from 'hooks/custom-content/useCustomContent'
 import { useSelectedOrganizationQuery } from 'hooks/misc/useSelectedOrganization'
 import { AuthProvider } from 'lib/auth'
-import { API_URL, BASE_PATH, IS_PLATFORM, useDefaultProvider } from 'lib/constants'
+import { API_URL, BASE_PATH, IS_PLATFORM, PORTAL_URL, useDefaultProvider } from 'lib/constants'
 import { ProfileProvider } from 'lib/profile'
 import { Telemetry } from 'lib/telemetry'
 import { AiAssistantStateContextProvider } from 'state/ai-assistant-state'
@@ -121,6 +122,45 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
 
   useThemeSandbox()
 
+  useEffect(() => {
+    if (!IS_PLATFORM || !PORTAL_URL) return
+
+    const stripBasePath = (url: string) => {
+      if (!BASE_PATH) return url
+      return url.startsWith(BASE_PATH) ? url.slice(BASE_PATH.length) || '/' : url
+    }
+
+    const isPortalRoute = (url: string) =>
+      url.startsWith('/org') ||
+      url.startsWith('/organizations') ||
+      url.startsWith('/new') ||
+      url.startsWith('/account') ||
+      url.startsWith('/billing') ||
+      url.startsWith('/support')
+
+    const toPortalUrl = (url: string) => {
+      const base = PORTAL_URL.endsWith('/') ? PORTAL_URL.slice(0, -1) : PORTAL_URL
+      const path = url.startsWith('/') ? url : `/${url}`
+      return `${base}${path}`
+    }
+
+    const handleRouteChange = (url: string) => {
+      if (url.startsWith('http://') || url.startsWith('https://')) return
+      const normalized = stripBasePath(url)
+      if (!isPortalRoute(normalized)) return
+
+      window.location.assign(toPortalUrl(normalized))
+      Router.events.emit('routeChangeError')
+      throw 'routeChange aborted'
+    }
+
+    Router.events.on('routeChangeStart', handleRouteChange)
+    handleRouteChange(`${window.location.pathname}${window.location.search}${window.location.hash}`)
+    return () => {
+      Router.events.off('routeChangeStart', handleRouteChange)
+    }
+  }, [])
+
   const isTestEnv = process.env.NEXT_PUBLIC_NODE_ENV === 'test'
 
   const cloudProvider = useDefaultProvider()
@@ -146,9 +186,9 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
               >
                 <ProfileProvider>
                   <Head>
-                    <title>{appTitle ?? 'Supabase'}</title>
+                    <title>{appTitle ?? 'Mattr'}</title>
                     <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-                    <meta property="og:image" content={`${BASE_PATH}/img/supabase-logo.png`} />
+                    <meta property="og:image" content={`${BASE_PATH}/img/og-mattr.png`} />
                     <meta name="googlebot" content="notranslate" />
                     {/* [Alaister]: This has to be an inline style tag here and not a separate component due to next/font */}
                     <style
@@ -165,7 +205,7 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
                       />
                     )}
                   </Head>
-                  <MetaFaviconsPagesRouter applicationName="Supabase Studio" includeManifest />
+                  <MetaFaviconsPagesRouter applicationName="Mattr" includeManifest />
                   <TooltipProvider delayDuration={0}>
                     <RouteValidationWrapper>
                       <ThemeProvider

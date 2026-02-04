@@ -91,7 +91,9 @@ const Wizard: NextPageWithLayout = () => {
   const cloudProviderEnabled = useFlag('enableFlyCloudProvider')
   const isHomeNew = usePHFlag('homeNew') === 'new-home'
 
+  const localProviderEnabled = process.env.NODE_ENV !== 'production'
   const showNonProdFields = process.env.NEXT_PUBLIC_ENVIRONMENT !== 'prod'
+  const showCloudProviderSelector = showNonProdFields && (cloudProviderEnabled || localProviderEnabled)
   const isNotOnHigherPlan = !['team', 'enterprise', 'platform'].includes(currentOrg?.plan.id ?? '')
   const hasTrackedRlsExposure = useRef(false)
 
@@ -133,6 +135,7 @@ const Wizard: NextPageWithLayout = () => {
     dbRegion,
     organization,
   } = useWatch_Shadcn_({ control: form.control })
+  const isLocalProvider = cloudProvider === PROVIDERS.LOCAL.id
 
   // [Charis] Since the form is updated in a useEffect, there is an edge case
   // when switching from free to paid, where canChooseInstanceSize is true for
@@ -180,7 +183,7 @@ const Wizard: NextPageWithLayout = () => {
       cloudProvider: PROVIDERS[defaultProvider].id,
     },
     {
-      enabled: !smartRegionEnabled,
+      enabled: !smartRegionEnabled && !isLocalProvider,
       refetchOnMount: false,
       refetchOnWindowFocus: false,
       refetchInterval: false,
@@ -197,7 +200,7 @@ const Wizard: NextPageWithLayout = () => {
         desiredInstanceSize: instanceSize as DesiredInstanceSize,
       },
       {
-        enabled: smartRegionEnabled,
+        enabled: smartRegionEnabled && !isLocalProvider,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchInterval: false,
@@ -228,7 +231,7 @@ const Wizard: NextPageWithLayout = () => {
       dbRegion: smartRegionEnabled ? dbRegionExact : dbRegion ?? '',
       organizationSlug: organization,
     },
-    { enabled: currentOrg !== null }
+    { enabled: currentOrg !== null && !isLocalProvider }
   )
 
   const userPrimaryEmail = profile?.primary_email?.toLowerCase()
@@ -308,6 +311,7 @@ const Wizard: NextPageWithLayout = () => {
       ? smartGroup.find((x) => x.name === dbRegion) ?? specific.find((x) => x.name === dbRegion)
       : undefined
 
+    const useRegionSelection = smartRegionEnabled && !isLocalProvider
     const data: ProjectCreateVariables = {
       dbPass,
       cloudProvider,
@@ -321,7 +325,7 @@ const Wizard: NextPageWithLayout = () => {
       dataApiUseApiSchema: false,
       postgresEngine: useOrioleDb ? availableOrioleVersion?.postgres_engine : postgresEngine,
       releaseChannel: useOrioleDb ? availableOrioleVersion?.release_channel : releaseChannel,
-      ...(smartRegionEnabled ? { regionSelection: selectedRegion } : { dbRegion }),
+      ...(useRegionSelection ? { regionSelection: selectedRegion } : { dbRegion }),
       ...(enableRlsEventTrigger ? { dbSql: AUTO_ENABLE_RLS_EVENT_TRIGGER_SQL } : {}),
     }
 
@@ -362,22 +366,33 @@ const Wizard: NextPageWithLayout = () => {
   }, [slug])
 
   useEffect(() => {
+    if (isLocalProvider) return
     if (form.getValues('dbRegion') === undefined && defaultRegion) {
       form.setValue('dbRegion', defaultRegion)
     }
-  }, [defaultRegion])
+  }, [defaultRegion, isLocalProvider])
 
   useEffect(() => {
+    if (isLocalProvider) return
     if (regionError) {
       form.setValue('dbRegion', PROVIDERS[defaultProvider].default_region.displayName)
     }
-  }, [regionError])
+  }, [regionError, isLocalProvider])
 
   useEffect(() => {
+    if (isLocalProvider) return
     if (recommendedSmartRegion) {
       form.setValue('dbRegion', recommendedSmartRegion)
     }
-  }, [recommendedSmartRegion])
+  }, [recommendedSmartRegion, isLocalProvider])
+
+  useEffect(() => {
+    if (!isLocalProvider) return
+    const localRegionValue = PROVIDERS.LOCAL.default_region.displayName
+    if (form.getValues('dbRegion') !== localRegionValue) {
+      form.setValue('dbRegion', localRegionValue)
+    }
+  }, [isLocalProvider, form])
 
   useEffect(() => {
     if (watchedInstanceSize !== instanceSize) {
@@ -439,7 +454,7 @@ const Wizard: NextPageWithLayout = () => {
                   <>
                     <ProjectNameInput form={form} />
 
-                    {cloudProviderEnabled && showNonProdFields && (
+                    {showCloudProviderSelector && (
                       <CloudProviderSelector form={form} />
                     )}
 

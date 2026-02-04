@@ -453,7 +453,7 @@ describe('SupportFormPage', () => {
     })
 
     mswServer.use(
-      http.get('http://localhost:3000/img/supabase-logo.svg', () => HttpResponse.text(''))
+      http.get('http://localhost:3000/img/mattr-logo.svg', () => HttpResponse.text(''))
     )
   })
 

@@ -127,11 +127,20 @@ export const LayoutHeader = ({
           <div className="flex items-center text-sm">
             <HomeIcon />
             <div className="flex items-center md:pl-2">
-              {showOrgSelection && IS_PLATFORM ? (
-                <>
-                  <LayoutHeaderDivider className="hidden md:block" />
-                  <OrganizationDropdown />
-                </>
+              {showOrgSelection ? (
+                IS_PLATFORM ? (
+                  <>
+                    <LayoutHeaderDivider className="hidden md:block" />
+                    <OrganizationDropdown />
+                  </>
+                ) : (
+                  <>
+                    <LayoutHeaderDivider className="hidden md:block" />
+                    <span className="text-foreground">
+                      {selectedOrganization?.name || 'Default Organization'}
+                    </span>
+                  </>
+                )
               ) : null}
               <AnimatePresence>
                 {projectRef && (

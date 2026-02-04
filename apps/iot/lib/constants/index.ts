@@ -3,6 +3,7 @@
 export * from './infrastructure'
 
 export const IS_PLATFORM = process.env.NEXT_PUBLIC_IS_PLATFORM === 'true'
+export const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL || ''
 export const IOT_API_URL = process.env.NEXT_PUBLIC_IOT_API_URL || ''
 export const IOT_DEFAULT_API_KEY = process.env.NEXT_PUBLIC_IOT_DEFAULT_API_KEY || ''
 

@@ -1,5 +1,5 @@
 import type { CloudProvider } from 'shared-data'
-import { AWS_REGIONS, FLY_REGIONS } from 'shared-data'
+import { AWS_REGIONS, FLY_REGIONS, TIMEWEB_REGIONS } from 'shared-data'
 
 import type { components } from 'data/api'
 import { useCustomContent } from 'hooks/custom-content/useCustomContent'
@@ -11,6 +11,7 @@ export const AWS_REGIONS_DEFAULT =
 
 // TO DO, change default to US region for prod
 export const FLY_REGIONS_DEFAULT = FLY_REGIONS.SOUTHEAST_ASIA
+export const TIMEWEB_REGIONS_DEFAULT = TIMEWEB_REGIONS.MOSCOW
 
 export const MANAGED_BY = {
   VERCEL_MARKETPLACE: 'vercel-marketplace',
@@ -76,6 +77,12 @@ export const PROVIDERS = {
     name: 'AWS (Nimbus)',
     default_region: AWS_REGIONS_DEFAULT,
     regions: { ...AWS_REGIONS },
+  },
+  TIMEWEB: {
+    id: 'TIMEWEB',
+    name: 'Timeweb Cloud',
+    default_region: TIMEWEB_REGIONS_DEFAULT,
+    regions: { ...TIMEWEB_REGIONS },
   },
 } as const
 

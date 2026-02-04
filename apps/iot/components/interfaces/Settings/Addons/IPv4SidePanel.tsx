@@ -13,17 +13,20 @@ import type { AddonVariantId } from 'data/subscriptions/types'
 import { useCheckEntitlements } from 'hooks/misc/useCheckEntitlements'
 import { useAsyncCheckPermissions } from 'hooks/misc/useCheckPermissions'
 import { useSelectedOrganizationQuery } from 'hooks/misc/useSelectedOrganization'
-import { useIsAwsCloudProvider } from 'hooks/misc/useSelectedProject'
-import { DOCS_URL } from 'lib/constants'
+import { useSelectedProjectQuery } from 'hooks/misc/useSelectedProject'
+import { DOCS_URL, PROVIDERS } from 'lib/constants'
 import { formatCurrency } from 'lib/helpers'
 import { useAddonsPagePanel } from 'state/addons-page'
 import { Button, Radio, SidePanel, cn } from 'ui'
 import { Admonition } from 'ui-patterns'
 
 const IPv4SidePanel = () => {
-  const isAws = useIsAwsCloudProvider()
   const { ref: projectRef } = useParams()
+  const { data: project } = useSelectedProjectQuery()
   const { data: organization } = useSelectedOrganizationQuery()
+
+  const supportsIpv4Addon =
+    project?.cloud_provider === PROVIDERS.AWS.id || project?.cloud_provider === PROVIDERS.TIMEWEB.id
 
   const [selectedOption, setSelectedOption] = useState<string>('ipv4_none')
 
@@ -102,7 +105,7 @@ const IPv4SidePanel = () => {
         !hasChanges ||
         isSubmitting ||
         !canUpdateIPv4 ||
-        !isAws
+        !supportsIpv4Addon
       }
       tooltip={
         !hasAccessToIPv4
@@ -134,10 +137,10 @@ const IPv4SidePanel = () => {
             database via a IPv4 address.
           </p>
 
-          {!isAws && (
+          {!supportsIpv4Addon && (
             <Admonition
               type="default"
-              title="Dedicated IPv4 address is only available for AWS projects"
+              title="Dedicated IPv4 address is only available for AWS or Timeweb projects"
             />
           )}
 
@@ -192,7 +195,7 @@ const IPv4SidePanel = () => {
                   className="col-span-4 !p-0"
                   name="ipv4"
                   key={option.identifier}
-                  disabled={!hasAccessToIPv4 || !isAws}
+                  disabled={!hasAccessToIPv4 || !supportsIpv4Addon}
                   checked={selectedOption === option.identifier}
                   label={option.name}
                   value={option.identifier}

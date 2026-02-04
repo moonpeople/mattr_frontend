@@ -1,5 +1,9 @@
-export type CloudProvider = 'FLY' | 'AWS' | 'AWS_K8S' | 'AWS_NIMBUS'
-export type Region = Partial<typeof AWS_REGIONS> | Partial<typeof FLY_REGIONS>
+export type CloudProvider = 'FLY' | 'AWS' | 'AWS_K8S' | 'AWS_NIMBUS' | 'TIMEWEB' | 'LOCAL'
+export type Region =
+  | Partial<typeof AWS_REGIONS>
+  | Partial<typeof FLY_REGIONS>
+  | Partial<typeof TIMEWEB_REGIONS>
+  | Partial<typeof LOCAL_REGIONS>
 
 export const AWS_REGIONS = {
   WEST_US: {
@@ -81,6 +85,16 @@ export type AWS_REGIONS_KEYS = keyof typeof AWS_REGIONS
 
 export const FLY_REGIONS = {
   SOUTHEAST_ASIA: { code: 'sin', displayName: 'Singapore', location: [1.3521, 103.8198] },
+} as const
+
+export const TIMEWEB_REGIONS = {
+  MOSCOW: { code: 'msk', displayName: 'Moscow', location: [55.7558, 37.6173] },
+  SAINT_PETERSBURG: { code: 'spb', displayName: 'Saint Petersburg', location: [59.9311, 30.3609] },
+  NOVOSIBIRSK: { code: 'nsk', displayName: 'Novosibirsk', location: [55.0084, 82.9357] },
+} as const
+
+export const LOCAL_REGIONS = {
+  LOCAL: { code: 'local', displayName: 'Local', location: [0, 0] },
 } as const
 
 export const SMART_REGION_TO_EXACT_REGION_MAP = new Map([

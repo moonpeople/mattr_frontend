@@ -90,7 +90,9 @@ const Wizard: NextPageWithLayout = () => {
   const homeNewVariant = usePHFlag<HomeNewFlagValue>('homeNew')
   const isHomeNew = isHomeNewVariant(homeNewVariant)
 
+  const localProviderEnabled = process.env.NODE_ENV !== 'production'
   const showNonProdFields = process.env.NEXT_PUBLIC_ENVIRONMENT !== 'prod'
+  const showCloudProviderSelector = showNonProdFields && (cloudProviderEnabled || localProviderEnabled)
   const isNotOnHigherPlan = !['team', 'enterprise', 'platform'].includes(currentOrg?.plan.id ?? '')
 
   // This is to make the database.new redirect work correctly. The database.new redirect should be set to supabase.com/dashboard/new/last-visited-org
@@ -134,6 +136,7 @@ const Wizard: NextPageWithLayout = () => {
     projectType,
   } = useWatch_Shadcn_({ control: form.control })
   const isIotProject = projectType === 'iot'
+  const isLocalProvider = cloudProvider === PROVIDERS.LOCAL.id
 
   // [Charis] Since the form is updated in a useEffect, there is an edge case
   // when switching from free to paid, where canChooseInstanceSize is true for
@@ -181,7 +184,7 @@ const Wizard: NextPageWithLayout = () => {
       cloudProvider: PROVIDERS[defaultProvider].id,
     },
     {
-      enabled: !smartRegionEnabled && !isIotProject,
+      enabled: !smartRegionEnabled && !isIotProject && !isLocalProvider,
       refetchOnMount: false,
       refetchOnWindowFocus: false,
       refetchInterval: false,
@@ -198,7 +201,7 @@ const Wizard: NextPageWithLayout = () => {
         desiredInstanceSize: instanceSize as DesiredInstanceSize,
       },
       {
-        enabled: smartRegionEnabled && !isIotProject,
+        enabled: smartRegionEnabled && !isIotProject && !isLocalProvider,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
         refetchInterval: false,
@@ -236,7 +239,7 @@ const Wizard: NextPageWithLayout = () => {
       dbRegion: smartRegionEnabled ? dbRegionExact : dbRegion ?? '',
       organizationSlug: organization,
     },
-    { enabled: currentOrg !== null && !isIotProject }
+    { enabled: currentOrg !== null && !isIotProject && !isLocalProvider }
   )
 
   const {
@@ -314,6 +317,7 @@ const Wizard: NextPageWithLayout = () => {
       ? smartGroup.find((x) => x.name === dbRegion) ?? specific.find((x) => x.name === dbRegion)
       : undefined
 
+    const useRegionSelection = smartRegionEnabled && !isLocalProvider
     const data: ProjectCreateVariables = {
       dbPass: projectType === 'iot' ? undefined : dbPass,
       cloudProvider,
@@ -330,7 +334,7 @@ const Wizard: NextPageWithLayout = () => {
       projectType,
       ...(projectType === 'iot'
         ? { dbRegion }
-        : smartRegionEnabled
+        : useRegionSelection
           ? { regionSelection: selectedRegion }
           : { dbRegion }),
     }
@@ -373,27 +377,42 @@ const Wizard: NextPageWithLayout = () => {
 
   useEffect(() => {
     if (projectType === 'iot') return
+    if (isLocalProvider) return
     if (form.getValues('dbRegion') === undefined && defaultRegion) {
       form.setValue('dbRegion', defaultRegion)
     }
-  }, [defaultRegion, projectType])
+  }, [defaultRegion, projectType, isLocalProvider])
 
   useEffect(() => {
     if (projectType === 'iot') return
+    if (isLocalProvider) return
     if (regionError) {
       form.setValue('dbRegion', PROVIDERS[defaultProvider].default_region.displayName)
     }
-  }, [regionError, projectType])
+  }, [regionError, projectType, isLocalProvider])
 
   useEffect(() => {
     if (projectType === 'iot') return
+    if (isLocalProvider) return
     if (recommendedSmartRegion) {
       form.setValue('dbRegion', recommendedSmartRegion)
     }
-  }, [recommendedSmartRegion, projectType])
+  }, [recommendedSmartRegion, projectType, isLocalProvider])
+
+  useEffect(() => {
+    if (!isLocalProvider) return
+    const localRegionValue = isIotProject
+      ? PROVIDERS.LOCAL.default_region.code
+      : PROVIDERS.LOCAL.default_region.displayName
+
+    if (form.getValues('dbRegion') !== localRegionValue) {
+      form.setValue('dbRegion', localRegionValue)
+    }
+  }, [isLocalProvider, isIotProject, form])
 
   useEffect(() => {
     if (projectType !== 'iot') return
+    if (isLocalProvider) return
     if (iotRegions.length === 0) return
 
     const current = form.getValues('dbRegion')
@@ -401,7 +420,7 @@ const Wizard: NextPageWithLayout = () => {
     if (!isValid) {
       form.setValue('dbRegion', iotRegions[0].slug)
     }
-  }, [projectType, iotRegions, form])
+  }, [projectType, iotRegions, form, isLocalProvider])
 
   useEffect(() => {
     if (watchedInstanceSize !== instanceSize) {
@@ -450,7 +469,7 @@ const Wizard: NextPageWithLayout = () => {
                     <ProjectNameInput form={form} />
                     <ProjectTypeSelector form={form} />
 
-                    {!isIotProject && cloudProviderEnabled && showNonProdFields && (
+                    {showCloudProviderSelector && (
                       <CloudProviderSelector form={form} />
                     )}
 

@@ -123,7 +123,8 @@ export const AIAssistant = ({ className }: AIAssistantProps) => {
     { enabled: isApiKeySet }
   )
 
-  const currentTable = tables?.find((t) => t.id.toString() === entityId)
+  const tableList = Array.isArray(tables) ? tables : []
+  const currentTable = tableList.find((t) => t.id.toString() === entityId)
   const currentSchema = searchParams?.get('schema') ?? 'public'
 
   // Update context in state

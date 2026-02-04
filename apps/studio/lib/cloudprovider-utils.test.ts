@@ -14,6 +14,12 @@ describe('getCloudProviderArchitecture', () => {
     expect(result).toBe('x86 64-bit')
   })
 
+  it('should return the correct architecture for timeweb', () => {
+    const result = getCloudProviderArchitecture(PROVIDERS.TIMEWEB.id)
+
+    expect(result).toBe('x86 64-bit')
+  })
+
   it('should return an empty string if the cloud provider is not supported', () => {
     const result = getCloudProviderArchitecture('unknown')
 

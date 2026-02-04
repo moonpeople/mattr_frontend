@@ -81,7 +81,7 @@
       "description": "Filters the valid cloud providers",
       "items": {
         "type": "string",
-        "enum": ["AWS", "AWS_K8S", "AWS_NIMBUS", "FLY"]
+        "enum": ["AWS", "AWS_K8S", "AWS_NIMBUS", "FLY", "TIMEWEB"]
       }
     },
     "infra:aws_nimbus_label": {

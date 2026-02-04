@@ -43,8 +43,8 @@ export const AIOnboarding = ({
   } = useProjectLintsQuery({ projectRef })
   const isLintsLoading = isLoadingLints || isFetchingLints
 
-  const errorLints: Lint[] = (lints?.filter((lint) => lint.level === LINTER_LEVELS.ERROR) ??
-    []) as Lint[]
+  const lintList: Lint[] = Array.isArray(lints) ? lints : []
+  const errorLints: Lint[] = lintList.filter((lint) => lint.level === LINTER_LEVELS.ERROR)
   const securityErrorLints = errorLints.filter((lint) => lint.categories?.[0] === 'SECURITY')
   const performanceErrorLints = errorLints.filter((lint) => lint.categories?.[0] !== 'SECURITY')
 

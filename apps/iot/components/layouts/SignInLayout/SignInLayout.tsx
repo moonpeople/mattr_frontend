@@ -121,8 +121,8 @@ const SignInLayout = ({
                   <img
                     src={
                       resolvedTheme?.includes('dark')
-                        ? `${BASE_PATH}/img/supabase-dark.svg`
-                        : `${BASE_PATH}/img/supabase-light.svg`
+                        ? `${BASE_PATH}/img/mattr-dark.svg`
+                        : `${BASE_PATH}/img/mattr-light.svg`
                     }
                     alt="Supabase Logo"
                     className={largeLogo ? 'h-[48px]' : 'h-[24px]'}

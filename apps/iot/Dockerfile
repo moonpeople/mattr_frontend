@@ -1,9 +1,9 @@
 # To be run in the root of the turbo monorepo
 # NOTE: It's highly recommended to use the new builder, Buildkit. https://docs.docker.com/build/buildkit/
 ## USAGE:
-# Build:        docker build . -f apps/iot/Dockerfile --target production -t studio:latest
-# Run:          docker run -p 3000:3000 supabase/studio
-# Deploy:       docker push supabase/studio:latest
+# Build:        docker build . -f apps/iot/Dockerfile --target production -t iot:latest
+# Run:          docker run -p 3000:3000 iot:latest
+# Deploy:       docker push iot:latest
 # Clean build:
 #    docker builder prune
 #    docker build . -f apps/iot/Dockerfile --target production -t studio:latest --no-cache
@@ -33,7 +33,7 @@ WORKDIR /app
 FROM base AS turbo
 COPY . .
 
-RUN pnpm dlx turbo@2.3.3 prune studio --docker
+RUN pnpm dlx turbo@2.3.3 prune iot --docker
 
 # Install dev dependencies (only if needed)
 FROM base AS deps
@@ -48,12 +48,12 @@ FROM deps AS dev
 COPY --from=turbo /app/out/full ./
 ENTRYPOINT ["docker-entrypoint.sh"]
 EXPOSE 8082
-CMD ["pnpm", "dev:studio"]
+CMD ["pnpm", "dev:iot"]
 
 # Compile Next.js
 FROM dev AS builder
 
-RUN pnpm --filter studio exec next build
+RUN pnpm --filter iot exec next build
 
 # Copy only compiled code and dependencies
 FROM base AS production

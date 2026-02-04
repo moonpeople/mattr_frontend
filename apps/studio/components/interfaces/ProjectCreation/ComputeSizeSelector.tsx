@@ -25,6 +25,9 @@ interface ComputeSizeSelectorProps {
 }
 
 export const ComputeSizeSelector = ({ form }: ComputeSizeSelectorProps) => {
+  const cloudProvider = form.getValues('cloudProvider') as CloudProvider
+  const isLocalProvider = cloudProvider === 'LOCAL'
+
   return (
     <Panel.Content>
       <FormField_Shadcn_
@@ -57,11 +60,10 @@ export const ComputeSizeSelector = ({ form }: ComputeSizeSelectorProps) => {
               <SelectContent_Shadcn_>
                 <SelectGroup_Shadcn_>
                   {sizes
-                    .filter((option) =>
-                      instanceSizeSpecs[option].cloud_providers.includes(
-                        form.getValues('cloudProvider') as CloudProvider
-                      )
-                    )
+                    .filter((option) => {
+                      if (isLocalProvider) return true
+                      return instanceSizeSpecs[option].cloud_providers.includes(cloudProvider)
+                    })
                     .map((option) => {
                       return (
                         <SelectItem_Shadcn_ key={option} value={option}>
@@ -74,9 +76,7 @@ export const ComputeSizeSelector = ({ form }: ComputeSizeSelectorProps) => {
                               <span className="text-foreground">
                                 {instanceSizeSpecs[option].ram} RAM /{' '}
                                 {instanceSizeSpecs[option].cpu}{' '}
-                                {getCloudProviderArchitecture(
-                                  form.getValues('cloudProvider') as CloudProvider
-                                )}{' '}
+                                {getCloudProviderArchitecture(cloudProvider)}{' '}
                                 CPU
                               </span>
                               <p

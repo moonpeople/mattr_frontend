@@ -56,13 +56,15 @@ export const RegionSelector = ({
 }: RegionSelectorProps) => {
   const { slug } = useParams()
   const cloudProvider = form.getValues('cloudProvider') as CloudProvider
+  const isLocalProvider = cloudProvider === 'LOCAL'
 
   const smartRegionEnabled = useFlag('enableSmartRegion')
+  const smartRegionActive = smartRegionEnabled && !isLocalProvider
   const isIotProject = projectType === 'iot'
 
   const { isPending: isLoadingDefaultRegion } = useDefaultRegionQuery(
     { cloudProvider },
-    { enabled: !smartRegionEnabled && !isIotProject }
+    { enabled: !smartRegionActive && !isIotProject }
   )
 
   const {
@@ -72,7 +74,10 @@ export const RegionSelector = ({
     error: errorAvailableRegions,
   } = useOrganizationAvailableRegionsQuery(
     { slug, cloudProvider, desiredInstanceSize: instanceSize },
-    { enabled: smartRegionEnabled && !isIotProject, staleTime: 1000 * 60 * 5 } // 5 minutes
+    {
+      enabled: smartRegionActive && !isIotProject,
+      staleTime: 1000 * 60 * 5,
+    } // 5 minutes
   )
 
   const {
@@ -109,16 +114,22 @@ export const RegionSelector = ({
     status: undefined,
   }))
 
-  const regionOptions = smartRegionEnabled ? allRegions : regionsArray
+  const regionOptions = smartRegionActive ? allRegions : regionsArray
   const isLoading = isIotProject
     ? isLoadingPlatformRegions
-    : smartRegionEnabled
+    : smartRegionActive
       ? isLoadingAvailableRegions
       : isLoadingDefaultRegion
 
   const showNonProdFields =
     process.env.NEXT_PUBLIC_ENVIRONMENT === 'local' ||
     process.env.NEXT_PUBLIC_ENVIRONMENT === 'staging'
+  const showNonProdHint = showNonProdFields && !isIotProject && !isLocalProvider
+
+  const nonProdRegionHint =
+    cloudProvider === 'TIMEWEB'
+      ? ['Moscow', 'Saint Petersburg', 'Novosibirsk']
+      : ['East US (North Virginia)', 'Central EU (Frankfurt)', 'Southeast Asia (Singapore)']
 
   const allSelectableRegions = isIotProject
     ? iotRegionOptions
@@ -154,13 +165,13 @@ export const RegionSelector = ({
                       ? 'Select the region where the IoT stack will be deployed.'
                       : 'Select the region closest to your users for the best performance.'}
                   </p>
-                  {!isIotProject && showNonProdFields && (
+                  {showNonProdHint && (
                     <div className="mt-2 text-warning">
                       <p>Only these regions are supported for local/staging projects:</p>
                       <ul className="list-disc list-inside mt-1">
-                        <li>East US (North Virginia)</li>
-                        <li>Central EU (Frankfurt)</li>
-                        <li>Southeast Asia (Singapore)</li>
+                        {nonProdRegionHint.map((region) => (
+                          <li key={region}>{region}</li>
+                        ))}
                       </ul>
                     </div>
                   )}
@@ -182,7 +193,7 @@ export const RegionSelector = ({
                   >
                     {field.value !== undefined && (
                       <div className="flex items-center gap-x-3">
-                        {!isIotProject && selectedRegion?.code && (
+                        {!isIotProject && !isLocalProvider && selectedRegion?.code && (
                           <img
                             alt="region icon"
                             className="w-5 rounded-sm"
@@ -201,7 +212,7 @@ export const RegionSelector = ({
                   </SelectValue_Shadcn_>
                 </SelectTrigger_Shadcn_>
                 <SelectContent_Shadcn_>
-                  {smartRegionEnabled && !isIotProject && (
+                  {smartRegionActive && !isIotProject && (
                     <>
                       <SelectGroup_Shadcn_>
                         <SelectLabel_Shadcn_>General regions</SelectLabel_Shadcn_>
@@ -259,7 +270,7 @@ export const RegionSelector = ({
                         >
                           <div className="flex flex-row items-center justify-between w-full gap-x-2">
                             <div className="flex items-center gap-x-3">
-                              {!isIotProject && (
+                              {!isIotProject && !isLocalProvider && (
                                 <img
                                   alt="region icon"
                                   className="w-5 rounded-sm"

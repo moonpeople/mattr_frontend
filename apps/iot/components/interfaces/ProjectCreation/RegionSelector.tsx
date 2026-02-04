@@ -98,6 +98,11 @@ export const RegionSelector = ({
     process.env.NEXT_PUBLIC_ENVIRONMENT === 'local' ||
     process.env.NEXT_PUBLIC_ENVIRONMENT === 'staging'
 
+  const nonProdRegionHint =
+    cloudProvider === 'TIMEWEB'
+      ? ['Moscow', 'Saint Petersburg', 'Novosibirsk']
+      : ['East US (North Virginia)', 'Central EU (Frankfurt)', 'Southeast Asia (Singapore)']
+
   const allSelectableRegions = [...smartRegions, ...regionOptions]
 
   if (isErrorAvailableRegions) {
@@ -125,9 +130,9 @@ export const RegionSelector = ({
                     <div className="mt-2 text-warning">
                       <p>Only these regions are supported for local/staging projects:</p>
                       <ul className="list-disc list-inside mt-1">
-                        <li>East US (North Virginia)</li>
-                        <li>Central EU (Frankfurt)</li>
-                        <li>Southeast Asia (Singapore)</li>
+                        {nonProdRegionHint.map((region) => (
+                          <li key={region}>{region}</li>
+                        ))}
                       </ul>
                     </div>
                   )}

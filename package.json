@@ -9,7 +9,7 @@
     "dev:studio": "pnpm --filter ./apps/studio dev",
     "dev:studio:platform": "pnpm --filter ./apps/studio dev:platform",
     "dev:studio:standalone": "pnpm --filter ./apps/studio dev:standalone",
-    "dev:all": "bash -lc 'pnpm --filter portal dev & pnpm --filter ./apps/iot dev:platform & wait'",
+    "dev:all": "bash -lc 'pnpm --filter portal dev & pnpm --filter ./apps/iot dev:platform & pnpm --filter ./apps/studio dev:platform & wait'",
     "build": "pnpm --filter portal build",
     "build:iot": "pnpm --filter ./apps/iot build",
     "build:studio": "pnpm --filter ./apps/studio build",

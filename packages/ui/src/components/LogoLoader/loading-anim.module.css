@@ -1,13 +1,19 @@
-.loading path {
-  stroke-dasharray: 30 220;
-  animation: dash 1.15s cubic-bezier(0.39, 0.29, 0.5, 0.59) infinite both;
+.loading {
+  transform-origin: center;
+  animation: pulse 1.2s ease-in-out infinite;
 }
 
-@keyframes dash {
-  from {
-    stroke-dashoffset: 52;
+@keyframes pulse {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.97);
   }
-  to {
-    stroke-dashoffset: 280;
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.7;
+    transform: scale(0.97);
   }
 }

@@ -140,7 +140,7 @@ function SupportFormHeader() {
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-y-2">
       <div className="flex items-center space-x-3">
-        <SVG src={`${BASE_PATH}/img/supabase-logo.svg`} className="h-4 w-4" />
+        <SVG src={`${BASE_PATH}/img/mattr-logo.svg`} className="h-4 w-4" />
         <h3 className="m-0 text-lg">Supabase support</h3>
       </div>
 

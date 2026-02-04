@@ -15,7 +15,7 @@ const JoinOrganizationPage: NextPageWithLayout = () => {
 
   const imgUrl = useMemo(
     () =>
-      isDarkMode ? `${BASE_PATH}/img/supabase-dark.svg` : `${BASE_PATH}/img/supabase-light.svg`,
+      isDarkMode ? `${BASE_PATH}/img/mattr-dark.svg` : `${BASE_PATH}/img/mattr-light.svg`,
     [isDarkMode]
   )
 
@@ -25,7 +25,7 @@ const JoinOrganizationPage: NextPageWithLayout = () => {
     <>
       <Link href="/projects" className="flex items-center justify-center gap-4">
         {mounted && (
-          <img src={imgUrl} alt="Supabase" className="block h-[24px] cursor-pointer rounded" />
+          <img src={imgUrl} alt="Mattr" className="block h-[24px] cursor-pointer rounded" />
         )}
       </Link>
       <OrganizationInvite />

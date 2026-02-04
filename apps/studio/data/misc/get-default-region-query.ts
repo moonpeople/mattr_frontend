@@ -9,7 +9,7 @@ import {
 import { fetchHandler } from 'data/fetchers'
 import { getDistanceLatLonKM, tryParseJson } from 'lib/helpers'
 import type { CloudProvider } from 'shared-data'
-import { AWS_REGIONS, FLY_REGIONS } from 'shared-data'
+import { AWS_REGIONS, FLY_REGIONS, LOCAL_REGIONS, TIMEWEB_REGIONS } from 'shared-data'
 import type { ResponseError, UseCustomQueryOptions } from 'types'
 import { miscKeys } from './keys'
 
@@ -38,6 +38,16 @@ export async function getDefaultRegionOption({
     if (locLatLon === undefined) return undefined
 
     const isAWSProvider = ['AWS', 'AWS_K8S'].includes(cloudProvider)
+    const isTimewebProvider = cloudProvider === 'TIMEWEB'
+    const isLocalProvider = cloudProvider === 'LOCAL'
+
+    if (isLocalProvider) {
+      return LOCAL_REGIONS.LOCAL.displayName
+    }
+
+    if (isTimewebProvider) {
+      return TIMEWEB_REGIONS.MOSCOW.displayName
+    }
 
     const allRegions = isAWSProvider ? AWS_REGIONS_COORDINATES : FLY_REGIONS_COORDINATES
     const locations =

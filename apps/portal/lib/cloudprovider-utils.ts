@@ -6,6 +6,8 @@ export function getCloudProviderArchitecture(cloudProvider: string | undefined) 
       return 'ARM'
     case PROVIDERS.FLY.id:
       return 'x86 64-bit'
+    case PROVIDERS.TIMEWEB.id:
+      return 'x86 64-bit'
     default:
       return ''
   }

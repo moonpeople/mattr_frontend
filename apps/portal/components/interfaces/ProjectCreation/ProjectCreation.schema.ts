@@ -15,9 +15,7 @@ export const FormSchema = z
     postgresVersion: z.string({
       required_error: 'Please enter a Postgres version.',
     }),
-    dbRegion: z.string({
-      required_error: 'Please select a region.',
-    }),
+    dbRegion: z.string().optional(),
     cloudProvider: z.string({
       required_error: 'Please select a cloud provider.',
     }),
@@ -35,7 +33,17 @@ export const FormSchema = z
     postgresVersionSelection: z.string(),
     useOrioleDb: z.boolean(),
   })
-  .superRefine(({ projectType, dbPass, dbPassStrength, dbPassStrengthWarning }, ctx) => {
+  .superRefine(({ projectType, dbPass, dbPassStrength, dbPassStrengthWarning, dbRegion, cloudProvider }, ctx) => {
+    if (cloudProvider !== 'LOCAL') {
+      if (!dbRegion || dbRegion.trim() === '') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['dbRegion'],
+          message: 'Please select a region.',
+        })
+      }
+    }
+
     if (projectType !== 'iot') {
       if (!dbPass || dbPass.trim() === '') {
         ctx.addIssue({

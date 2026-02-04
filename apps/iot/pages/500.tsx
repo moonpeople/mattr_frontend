@@ -36,8 +36,8 @@ const Error500: NextPage = () => {
                 <Image
                   src={
                     resolvedTheme?.includes('dark')
-                      ? `${router.basePath}/img/supabase-dark.svg`
-                      : `${router.basePath}/img/supabase-light.svg`
+                      ? `${router.basePath}/img/mattr-dark.svg`
+                      : `${router.basePath}/img/mattr-light.svg`
                   }
                   alt=""
                   height={24}

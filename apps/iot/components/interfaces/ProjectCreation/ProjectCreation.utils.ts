@@ -1,6 +1,6 @@
 import { DesiredInstanceSize, instanceSizeSpecs } from 'data/projects/new-project.constants'
 import type { CloudProvider, Region } from 'shared-data'
-import { AWS_REGIONS, FLY_REGIONS } from 'shared-data'
+import { AWS_REGIONS, FLY_REGIONS, TIMEWEB_REGIONS } from 'shared-data'
 import { SMART_REGION_TO_EXACT_REGION_MAP } from 'shared-data/regions'
 
 export function smartRegionToExactRegion(smartOrExactRegion: string) {
@@ -26,6 +26,8 @@ export function getAvailableRegions(cloudProvider: CloudProvider): Region {
       }
     case 'FLY':
       return FLY_REGIONS
+    case 'TIMEWEB':
+      return TIMEWEB_REGIONS
     default:
       throw new Error('Invalid cloud provider')
   }
