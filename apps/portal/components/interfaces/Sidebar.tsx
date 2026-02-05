@@ -1,6 +1,15 @@
 import { AnimatePresence, motion, MotionProps } from 'framer-motion'
 import { isUndefined } from 'lodash'
-import { Blocks, Boxes, ChartArea, PanelLeftDashed, Receipt, Settings, Users } from 'lucide-react'
+import {
+  AppWindow,
+  Blocks,
+  Boxes,
+  ChartArea,
+  PanelLeftDashed,
+  Receipt,
+  Settings,
+  Users,
+} from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { ComponentProps, ComponentPropsWithoutRef, FC, ReactNode, useEffect } from 'react'
@@ -393,6 +402,12 @@ const OrganizationLinks = () => {
       href: `/org/${organizationSlug}`,
       key: 'projects',
       icon: <Boxes size={ICON_SIZE} strokeWidth={ICON_STROKE_WIDTH} />,
+    },
+    {
+      label: 'Apps',
+      href: '/apps',
+      key: 'apps',
+      icon: <AppWindow size={ICON_SIZE} strokeWidth={ICON_STROKE_WIDTH} />,
     },
     {
       label: 'Team',

@@ -13,6 +13,7 @@ NEXT_PUBLIC_PLATFORM_API_URL=http://localhost:4000 \   # mattr_platform root; к
 NEXT_PUBLIC_AUTH_URL=http://localhost:4011 \           # mattr_auth (страница логина)
 IOT_STUDIO_URL=http://localhost:8084 \                # iot (прокси для /iot/*)
 STUDIO_URL=http://localhost:8082 \                    # studio (прокси для /studio/*)
+BUILDER_URL=http://localhost:8083 \                   # builder (прокси для /apps/*)
 pnpm dev
 ```
 Если переменная не задана, портал покажет sample-данные (ничего не ломает).
@@ -26,6 +27,7 @@ pnpm dev
 - `/portal/*` → portal
 - `/studio/*` → studio (через прокси)
 - `/iot/*` → iot (через прокси)
+- `/apps/*` → builder (через прокси)
 Пример nginx/traefik см. в `../../X_AI_DOCS/PORTAL_PROXY.md`.
 
 ## Безопасность и совместимость

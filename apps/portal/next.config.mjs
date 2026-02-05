@@ -7,6 +7,7 @@ const __dirname = path.dirname(__filename)
 const disableHcaptcha = process.env.NEXT_PUBLIC_ENABLE_HCAPTCHA !== 'true'
 const iotStudioUrl = process.env.IOT_STUDIO_URL || process.env.NEXT_PUBLIC_IOT_STUDIO_URL
 const studioUrl = process.env.STUDIO_URL || process.env.NEXT_PUBLIC_STUDIO_URL
+const builderUrl = process.env.BUILDER_URL || process.env.NEXT_PUBLIC_BUILDER_URL
 
 /** Minimal Next.js config for the portal shell. */
 const nextConfig = {
@@ -16,6 +17,19 @@ const nextConfig = {
   },
   async redirects() {
     const rules = []
+
+    rules.push(
+      {
+        source: '/apps/organizations',
+        destination: '/organizations',
+        permanent: false,
+      },
+      {
+        source: '/apps/organizations/:path*',
+        destination: '/organizations',
+        permanent: false,
+      }
+    )
 
     if (iotStudioUrl) {
       rules.push(
@@ -42,6 +56,21 @@ const nextConfig = {
         {
           source: '/studio/:ref([a-z0-9-]{16,36})/:path*',
           destination: '/studio/project/:ref/:path*',
+          permanent: false,
+        }
+      )
+    }
+
+    if (builderUrl) {
+      rules.push(
+        {
+          source: '/apps/:ref([a-z0-9-]{16,36})',
+          destination: '/apps/project/:ref',
+          permanent: false,
+        },
+        {
+          source: '/apps/:ref([a-z0-9-]{16,36})/:path*',
+          destination: '/apps/project/:ref/:path*',
           permanent: false,
         }
       )
@@ -83,6 +112,15 @@ const nextConfig = {
           destination: `${studioUrl}/studio/project/:ref/:path*`,
         },
         { source: '/studio/:path*', destination: `${studioUrl}/studio/:path*` }
+      )
+    }
+
+    if (builderUrl) {
+      rules.unshift(
+        { source: '/apps/_next/:path*', destination: `${builderUrl}/apps/_next/:path*` },
+        { source: '/apps/static/:path*', destination: `${builderUrl}/apps/static/:path*` },
+        { source: '/apps/favicon.ico', destination: `${builderUrl}/apps/favicon.ico` },
+        { source: '/apps/:path*', destination: `${builderUrl}/apps/:path*` }
       )
     }
 

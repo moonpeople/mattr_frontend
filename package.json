@@ -9,15 +9,19 @@
     "dev:studio": "pnpm --filter ./apps/studio dev",
     "dev:studio:platform": "pnpm --filter ./apps/studio dev:platform",
     "dev:studio:standalone": "pnpm --filter ./apps/studio dev:standalone",
-    "dev:all": "bash -lc 'pnpm --filter portal dev & pnpm --filter ./apps/iot dev:platform & pnpm --filter ./apps/studio dev:platform & wait'",
+    "dev:builder": "pnpm --filter ./apps/builder dev:platform",
+    "dev:all": "bash -lc 'pnpm --filter portal dev & pnpm --filter ./apps/iot dev:platform & pnpm --filter ./apps/studio dev:platform & pnpm --filter ./apps/builder dev:platform & wait'",
     "build": "pnpm --filter portal build",
     "build:iot": "pnpm --filter ./apps/iot build",
     "build:studio": "pnpm --filter ./apps/studio build",
+    "build:builder": "pnpm --filter ./apps/builder build",
     "lint": "pnpm --filter portal lint",
     "lint:iot": "pnpm --filter ./apps/iot lint",
     "lint:studio": "pnpm --filter ./apps/studio lint",
+    "lint:builder": "pnpm --filter ./apps/builder lint",
     "typecheck": "pnpm --filter portal typecheck",
     "typecheck:iot": "pnpm --filter ./apps/iot typecheck",
-    "typecheck:studio": "pnpm --filter ./apps/studio typecheck"
+    "typecheck:studio": "pnpm --filter ./apps/studio typecheck",
+    "typecheck:builder": "pnpm --filter ./apps/builder typecheck"
   }
 }

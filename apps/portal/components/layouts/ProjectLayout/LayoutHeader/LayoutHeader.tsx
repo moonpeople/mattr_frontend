@@ -89,8 +89,10 @@ export const LayoutHeader = ({
     }
   }, [orgUsage])
 
-  // show org selection if we are on a project page or on a explicit org route
-  const showOrgSelection = slug || (selectedOrganization && projectRef)
+  // show org selection if we are on a project page, org route, or apps page
+  const showOrgSelection =
+    !!selectedOrganization &&
+    (slug || projectRef || router.pathname === '/apps' || router.pathname.startsWith('/apps/'))
 
   return (
     <>
@@ -127,11 +129,20 @@ export const LayoutHeader = ({
           <div className="flex items-center text-sm">
             <HomeIcon />
             <div className="flex items-center md:pl-2">
-              {showOrgSelection && IS_PLATFORM ? (
-                <>
-                  <LayoutHeaderDivider className="hidden md:block" />
-                  <OrganizationDropdown />
-                </>
+              {showOrgSelection ? (
+                IS_PLATFORM ? (
+                  <>
+                    <LayoutHeaderDivider className="hidden md:block" />
+                    <OrganizationDropdown />
+                  </>
+                ) : (
+                  <>
+                    <LayoutHeaderDivider className="hidden md:block" />
+                    <span className="text-foreground">
+                      {selectedOrganization?.name || 'Default Organization'}
+                    </span>
+                  </>
+                )
               ) : null}
               <AnimatePresence>
                 {projectRef && (

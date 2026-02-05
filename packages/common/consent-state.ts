@@ -1,108 +1,71 @@
-import type Usercentrics from '@usercentrics/cmp-browser-sdk'
-import type { BaseCategory, UserDecision } from '@usercentrics/cmp-browser-sdk'
 import { proxy, snapshot, useSnapshot } from 'valtio'
 import { IS_PLATFORM, LOCAL_STORAGE_KEYS } from './constants'
 
+type ConsentCategory = {
+  slug: string
+  label: string
+  description: string
+  isEssential: boolean
+  services: readonly {
+    id: string
+    consent: {
+      status: boolean
+    }
+  }[]
+}
+
+type ConsentDecision = { serviceId: string; status: boolean } | { id: string; status: boolean }
+
+const isBrowser = typeof window !== 'undefined'
+
+const readStoredConsent = (): boolean | null => {
+  if (!isBrowser) return null
+
+  const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.TELEMETRY_CONSENT)
+  if (stored === 'true') return true
+  if (stored === 'false') return false
+  return null
+}
+
+const writeStoredConsent = (value: boolean) => {
+  if (!isBrowser) return
+  localStorage.setItem(LOCAL_STORAGE_KEYS.TELEMETRY_CONSENT, value.toString())
+}
+
+const resolveInitialConsent = (): boolean => {
+  const stored = readStoredConsent()
+  if (stored !== null) return stored
+
+  if (!IS_PLATFORM) return true
+
+  // Assume consent unless explicitly opted out.
+  return true
+}
+
 export const consentState = proxy({
-  // Usercentrics state
-  UC: null as Usercentrics | null,
-  categories: null as BaseCategory[] | null,
-
-  // Our state
+  categories: null as ConsentCategory[] | null,
   showConsentToast: false,
-  hasConsented: false,
+  hasConsented: resolveInitialConsent(),
   acceptAll: () => {
-    if (!consentState.UC) return
-    const previousConsentValue = consentState.hasConsented
-
-    consentState.hasConsented = true
-    consentState.showConsentToast = false
-
-    consentState.UC.acceptAllServices()
-      .then(() => {
-        consentState.categories = consentState.UC?.getCategoriesBaseInfo() ?? null
-      })
-      .catch(() => {
-        consentState.hasConsented = previousConsentValue
-        consentState.showConsentToast = true
-      })
+    setConsent(true)
   },
   denyAll: () => {
-    if (!consentState.UC) return
-    const previousConsentValue = consentState.hasConsented
-
-    consentState.hasConsented = false
-    consentState.showConsentToast = false
-
-    consentState.UC.denyAllServices()
-      .then(() => {
-        consentState.categories = consentState.UC?.getCategoriesBaseInfo() ?? null
-      })
-      .catch(() => {
-        consentState.showConsentToast = previousConsentValue
-      })
+    setConsent(false)
   },
-  updateServices: (decisions: UserDecision[]) => {
-    if (!consentState.UC) return
-
-    consentState.showConsentToast = false
-
-    consentState.UC.updateServices(decisions)
-      .then(() => {
-        consentState.hasConsented = consentState.UC?.areAllConsentsAccepted() ?? false
-        consentState.categories = consentState.UC?.getCategoriesBaseInfo() ?? null
-      })
-      .catch(() => {
-        consentState.showConsentToast = true
-      })
+  updateServices: (decisions: ConsentDecision[]) => {
+    if (!decisions?.length) return
+    const allAccepted = decisions.every((decision) => decision.status === true)
+    setConsent(allAccepted)
   },
 })
 
-async function initUserCentrics() {
-  if (process.env.NODE_ENV === 'test' || !IS_PLATFORM) return
-
-  // [Alaister] For local development and staging, we accept all consent by default.
-  // If you need to test usercentrics in these environments, comment out this
-  // NEXT_PUBLIC_ENVIRONMENT check and add an ngrok domain to usercentrics
-  if (
-    process.env.NEXT_PUBLIC_ENVIRONMENT === 'local' ||
-    process.env.NEXT_PUBLIC_ENVIRONMENT === 'staging'
-  ) {
-    consentState.hasConsented = true
-    return
-  }
-
-  const { default: Usercentrics } = await import('@usercentrics/cmp-browser-sdk')
-
-  const UC = new Usercentrics(process.env.NEXT_PUBLIC_USERCENTRICS_RULESET_ID!, {
-    rulesetId: process.env.NEXT_PUBLIC_USERCENTRICS_RULESET_ID,
-    useRulesetId: true,
-  })
-
-  const initialUIValues = await UC.init()
-
-  consentState.UC = UC
-  const hasConsented = UC.areAllConsentsAccepted()
-
-  // 0 = first layer, aka show consent toast
-  consentState.showConsentToast = initialUIValues.initialLayer === 0
-  consentState.hasConsented = hasConsented
-  consentState.categories = UC.getCategoriesBaseInfo()
-
-  // If the user has previously consented (before usercentrics), accept all services
-  if (!hasConsented && localStorage?.getItem(LOCAL_STORAGE_KEYS.TELEMETRY_CONSENT) === 'true') {
-    consentState.acceptAll()
-    localStorage.removeItem(LOCAL_STORAGE_KEYS.TELEMETRY_CONSENT)
-  }
-}
-
-// Usercentrics is not available on the server
-if (typeof window !== 'undefined') {
-  initUserCentrics()
+function setConsent(value: boolean) {
+  consentState.hasConsented = value
+  consentState.showConsentToast = false
+  writeStoredConsent(value)
 }
 
 // Public API for consent
-
 export function hasConsented() {
   return snapshot(consentState).hasConsented
 }
@@ -112,7 +75,7 @@ export function useConsentState() {
 
   return {
     hasAccepted: snap.hasConsented,
-    categories: snap.categories as BaseCategory[] | null,
+    categories: snap.categories as ConsentCategory[] | null,
     acceptAll: snap.acceptAll,
     denyAll: snap.denyAll,
     updateServices: snap.updateServices,

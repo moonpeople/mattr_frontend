@@ -1,0 +1,51 @@
+import { PropsWithChildren } from 'react'
+
+import { useParams } from 'common'
+import { PageLayout } from 'components/layouts/PageLayout/PageLayout'
+import { UnknownInterface } from 'components/ui/UnknownInterface'
+import { useIsFeatureEnabled } from 'hooks/misc/useIsFeatureEnabled'
+import { useI18n } from 'lib/i18n'
+import AuthLayout from './AuthLayout'
+
+export const AuthProvidersLayout = ({ children }: PropsWithChildren<{}>) => {
+  const { ref } = useParams()
+  const { t } = useI18n()
+  const { authenticationSignInProviders, authenticationThirdPartyAuth } = useIsFeatureEnabled([
+    'authentication:sign_in_providers',
+    'authentication:third_party_auth',
+  ])
+
+  const navItems = [
+    {
+      label: t('authProviders.supabaseAuth', 'Supabase Auth'),
+      href: `/project/${ref}/auth/providers`,
+    },
+    ...(authenticationThirdPartyAuth
+      ? [
+          {
+            label: t('authProviders.thirdPartyAuth', 'Third-Party Auth'),
+            href: `/project/${ref}/auth/third-party`,
+          },
+        ]
+      : []),
+  ]
+
+  return (
+    <AuthLayout>
+      {authenticationSignInProviders ? (
+        <PageLayout
+          title={t('authProviders.title', 'Sign In / Providers')}
+          subtitle={t(
+            'authProviders.subtitle',
+            'Configure authentication providers and login methods for your users'
+          )}
+          navigationItems={navItems}
+        >
+          {children}
+        </PageLayout>
+      ) : (
+        <UnknownInterface urlBack={`/project/${ref}/auth/users`} />
+      )}
+    </AuthLayout>
+  )
+}
