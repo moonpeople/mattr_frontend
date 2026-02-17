@@ -1,105 +1,41 @@
-# MATTR Frontend
+# MATTR Portal (единый вход) — черновик
 
-## Где вести разработку
-- Портал: `mattr/apps/portal`
-- Studio: `mattr/apps/studio`
-- IoT Studio: `mattr/apps/iot`
+Лёгкий Next.js-шелл, который делает только три вещи:
+1) логин через `mattr_auth` (JWT в HttpOnly cookie на базовом домене);
+2) читает из `mattr_platform` организации и проекты;
+3) редиректит в нужный фронт по типу проекта (`iot`, `base`) на пути `/iot/:projectRef` или `/studio/:projectRef`.
 
-## Запуск (pnpm)
+## Быстрый старт (pnpm, локально)
 ```bash
-cd mattr
+cd .
 pnpm install
-
-# портал
+NEXT_PUBLIC_PLATFORM_API_URL=http://localhost:4000 \   # mattr_platform root; клиент сам добавит /api/platform
+NEXT_PUBLIC_AUTH_URL=http://localhost:4011 \           # mattr_auth (страница логина)
+IOT_STUDIO_URL=http://localhost:8084 \                # iot (прокси для /iot/*)
+STUDIO_URL=http://localhost:8082 \                    # studio (прокси для /studio/*)
+BUILDER_URL=http://localhost:8083 \                   # builder (прокси для /apps/*)
 pnpm dev
-
-# studio (platform)
-pnpm dev:studio:platform
-
-# iot
-pnpm dev:iot
 ```
+Если переменная не задана, портал покажет sample-данные (ничего не ломает).
 
-## Как запускать
+## Ожидаемые эндпоинты
+- `GET /api/platform/organizations` → [{ id, name, slug }]
+- `GET /api/platform/organizations/:slug/projects` → [{ id, ref, name, organization_slug, project_type ∈ {base, iot} }]
+- Портал сам мапит `project_type=iot` → `/iot/:projectRef`, `project_type=base` → `/studio/:projectRef`.
 
-### Платформенный режим (iot)
-```bash
-cd mattr
-pnpm install
-pnpm --filter ./apps/iot dev:platform
-```
+## Маршрутизация (cloud)
+- `/portal/*` → portal
+- `/studio/*` → studio (через прокси)
+- `/iot/*` → iot (через прокси)
+- `/apps/*` → builder (через прокси)
+Пример nginx/traefik см. в `../X_AI_DOCS/PORTAL_PROXY.md`.
 
-### Платформенный режим (studio)
-```bash
-cd mattr
-pnpm install
-pnpm --filter ./apps/studio dev:platform
-```
+## Безопасность и совместимость
+- Включаем через фичефлаг `ENABLE_PORTAL_MATTR` (или старый `ENABLE_PORTAL_FLOW` для совместимости); старые прямые URL фронтов оставить рабочими.
+- Для разных доменов фронтов: добавить API `POST /app-tokens` (projectId) в `mattr_platform`, возвращать короткий signed JWT; целевой фронт обменивает его на cookie.
+- JWT хранить в HttpOnly cookie на домене верхнего уровня (см. proxy-конфиг).
 
-### Standalone режим (iot)
-```bash
-cd mattr
-pnpm install
-pnpm --filter ./apps/iot dev:standalone
-```
-
-### Standalone режим (studio)
-```bash
-cd mattr
-pnpm install
-pnpm --filter ./apps/studio dev:standalone
-```
-
-### Все вместе (portal + iot в платформенном режиме)
-```bash
-cd mattr
-pnpm install
-pnpm dev:all
-```
-
-## Репозитории
-- `mattr` → https://github.com/moonpeople/mattr_frontend.git
-- `mattr_studio` (upstream) → https://github.com/moonpeople/mattr_studio.git
-- `iot_studio` (upstream) → https://github.com/moonpeople/iot_studio.git
-
-## Синхронизация iot_studio ↔ mattr
-
-### Из mattr в upstream (для push в moonpeople/iot_studio)
-```bash
-./scripts/sync-iot-to-upstream.sh
-git -C ../iot_studio status
-git -C ../iot_studio add .
-git -C ../iot_studio commit -m "Sync from mattr"
-git -C ../iot_studio push
-```
-
-### Из upstream в mattr (если надо подтянуть изменения)
-```bash
-git -C ../iot_studio pull
-./scripts/sync-iot-from-upstream.sh
-```
-
-## Синхронизация mattr_studio ↔ mattr
-
-### Из mattr в upstream (для push в moonpeople/mattr_studio)
-```bash
-./scripts/sync-studio-to-upstream.sh
-git -C ../mattr_studio status
-git -C ../mattr_studio add .
-git -C ../mattr_studio commit -m "Sync from mattr"
-git -C ../mattr_studio push
-```
-
-### Из upstream в mattr (если надо подтянуть изменения)
-```bash
-git -C ../mattr_studio pull
-./scripts/sync-studio-from-upstream.sh
-```
-
-### Синхронизация пакетов (source-of-truth: mattr_studio)
-```bash
-./scripts/sync-studio-packages-from-upstream.sh
-```
-
-## Примечания
-- Разработка IoT ведётся в `mattr/apps/iot`, а sync-скрипты приводят пути к формату upstream.
+## Новые страницы в портале
+- `/auth/sign-in`, `/auth/sign-up`, `/auth/forgot-password` — тонкие формы, отправляют запросы в `mattr_auth` (REST) и перенаправляют в портал.
+- `/organizations` и `/organizations/:slug` — список орг и проектов из `mattr_platform`, кнопки перехода в нужный фронт по `project_type`.
+- Если нужно запустить без прокси, можно использовать каталог `pages/` с реэкспортами страниц из `mattr_studio/apps/studio/pages/*`. Требуется: включённый `experimental.externalDir` (уже в `next.config.mjs`), зависимости mattr_studio в node_modules (общий `pnpm i` на корне), алиасы в `tsconfig.json` (`@/*`, `@ui/*`, `mattr_studio_pages/*` — уже настроены).
