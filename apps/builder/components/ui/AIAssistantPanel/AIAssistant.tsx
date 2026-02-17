@@ -62,6 +62,7 @@ export const AIAssistant = ({ className }: AIAssistantProps) => {
   const snap = useAiAssistantStateSnapshot()
   const state = useAiAssistantState()
   const { activeSidebar, closeSidebar } = useSidebarManagerSnapshot()
+  const isBuilderAssistant = state.context.assistantMode === 'builder'
 
   const isPaidPlan = selectedOrganization?.plan?.id !== 'free'
 
@@ -118,7 +119,7 @@ export const AIAssistant = ({ className }: AIAssistantProps) => {
       connectionString: project?.connectionString,
       schema: 'public',
     },
-    { enabled: isApiKeySet }
+    { enabled: isApiKeySet && !isBuilderAssistant }
   )
 
   const currentTable = tables?.find((t) => t.id.toString() === entityId)
@@ -126,12 +127,24 @@ export const AIAssistant = ({ className }: AIAssistantProps) => {
 
   // Update context in state
   useEffect(() => {
+    if (isBuilderAssistant) {
+      state.setContext({
+        orgSlug: selectedOrganizationRef.current?.slug,
+      })
+      return
+    }
     state.setContext({
       projectRef: project?.ref,
       orgSlug: selectedOrganizationRef.current?.slug,
       connectionString: project?.connectionString ?? '',
     })
-  }, [project?.ref, project?.connectionString, selectedOrganizationRef.current?.slug, state])
+  }, [
+    isBuilderAssistant,
+    project?.ref,
+    project?.connectionString,
+    selectedOrganizationRef.current?.slug,
+    state,
+  ])
 
   const { mutate: sendEvent } = useSendEventMutation()
 

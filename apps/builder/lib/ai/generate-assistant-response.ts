@@ -31,6 +31,8 @@ export async function generateAssistantResponse({
   getSchemas,
   projectRef,
   chatName,
+  systemPrompt,
+  assistantContext,
   promptProviderOptions,
   providerOptions,
   abortSignal,
@@ -42,6 +44,8 @@ export async function generateAssistantResponse({
   getSchemas?: () => Promise<string>
   projectRef?: string
   chatName?: string
+  systemPrompt?: string
+  assistantContext?: string
   promptProviderOptions?: Record<string, any>
   providerOptions?: Record<string, any>
   abortSignal?: AbortSignal
@@ -78,23 +82,26 @@ export async function generateAssistantResponse({
       : "You don't have access to any schemas."
 
   // Important: do not use dynamic content in the system prompt or Bedrock will not cache it
-  const system = source`
-    ${GENERAL_PROMPT}
-    ${CHAT_PROMPT}
-    ${PG_BEST_PRACTICES}
-    ${RLS_PROMPT}
-    ${EDGE_FUNCTION_PROMPT}
-    ${REALTIME_PROMPT}
-    ${SECURITY_PROMPT}
-    ${LIMITATIONS_PROMPT}
-  `
+  const system =
+    systemPrompt ??
+    source`
+      ${GENERAL_PROMPT}
+      ${CHAT_PROMPT}
+      ${PG_BEST_PRACTICES}
+      ${RLS_PROMPT}
+      ${EDGE_FUNCTION_PROMPT}
+      ${REALTIME_PROMPT}
+      ${SECURITY_PROMPT}
+      ${LIMITATIONS_PROMPT}
+    `
 
   // Note: these must be of type `CoreMessage` to prevent AI SDK from stripping `providerOptions`
   // https://github.com/vercel/ai/blob/81ef2511311e8af34d75e37fc8204a82e775e8c3/packages/ai/core/prompt/standardize-prompt.ts#L83-L88
   const assistantContent =
-    projectRef || chatName || schemasString !== "You don't have access to any schemas."
+    assistantContext ??
+    (projectRef || chatName || schemasString !== "You don't have access to any schemas."
       ? `The user's current project is ${projectRef || 'unknown'}. Their available schemas are: ${schemasString}. The current chat name is: ${chatName || 'unnamed'}`
-      : undefined
+      : undefined)
 
   const coreMessages: ModelMessage[] = [
     {

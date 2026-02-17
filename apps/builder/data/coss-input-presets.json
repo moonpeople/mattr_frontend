@@ -1,0 +1,635 @@
+{
+  "presets": [
+    {
+      "name": "comp-01",
+      "label": "Simple input",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Simple input",
+        "placeholder": "Email",
+        "type": "email"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-02",
+      "label": "comp-02",
+      "widgetType": "TextInput",
+      "props": {
+        "placeholder": "Email",
+        "type": "email",
+        "required": true
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-03",
+      "label": "Input with helper text",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with helper text",
+        "placeholder": "Email",
+        "type": "email"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-04",
+      "label": "Input with hint",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with hint",
+        "placeholder": "Email",
+        "type": "email"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-05",
+      "label": "Input with colored border and ring",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with colored border and ring",
+        "placeholder": "Email",
+        "type": "email"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-06",
+      "label": "Input with error",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with error",
+        "placeholder": "Email",
+        "type": "email"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-07",
+      "label": "Input with gray background",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with gray background",
+        "placeholder": "Email",
+        "type": "email"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-08",
+      "label": "Disabled input",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Disabled input",
+        "placeholder": "Email",
+        "type": "email",
+        "disabled": true
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-09",
+      "label": "Input with start icon",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with start icon",
+        "placeholder": "Email",
+        "type": "email",
+        "disabled": true,
+        "prefixIcon": "edit",
+        "suffixIcon": "edit"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-10",
+      "label": "Input with end icon",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with end icon",
+        "placeholder": "Email",
+        "type": "email",
+        "disabled": true,
+        "prefixIcon": "edit",
+        "suffixIcon": "edit"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-11",
+      "label": "Input with start inline add-on",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with start inline add-on",
+        "placeholder": "google.com",
+        "type": "text",
+        "disabled": true,
+        "prefix": "https://"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-12",
+      "label": "Input with end inline add-on",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with end inline add-on",
+        "placeholder": "google",
+        "type": "text",
+        "disabled": true,
+        "suffix": ".com"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-13",
+      "label": "Input with inline add-ons",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with inline add-ons",
+        "placeholder": "0.00",
+        "type": "text",
+        "disabled": true,
+        "prefix": "\u20ac",
+        "suffix": "EUR"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-14",
+      "label": "Input with start add-on",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with start add-on",
+        "placeholder": "google.com",
+        "type": "text"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-15",
+      "label": "Input with end add-on",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with end add-on",
+        "placeholder": "google",
+        "type": "text",
+        "addonAfterType": "text",
+        "addonAfterText": ".com"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-16",
+      "label": "Input with inline start and end add-on",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with inline start and end add-on",
+        "placeholder": "0.00",
+        "type": "text",
+        "prefix": "\u20ac",
+        "addonAfterType": "text",
+        "addonAfterText": "EUR"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-17",
+      "label": "Input with start select",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with start select",
+        "placeholder": "192.168.1.1",
+        "type": "text",
+        "addonAfterType": "select"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-18",
+      "label": "Input with end select",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with end select",
+        "placeholder": "google",
+        "type": "text",
+        "addonAfterType": "select"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-19",
+      "label": "Input with end inline button",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with end inline button",
+        "placeholder": "Email",
+        "type": "email",
+        "disabled": true,
+        "prefixIcon": "send",
+        "suffixIcon": "send"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-20",
+      "label": "Input with end icon button",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with end icon button",
+        "placeholder": "Email",
+        "type": "email",
+        "disabled": true,
+        "prefixIcon": "download",
+        "suffixIcon": "download"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-21",
+      "label": "Input with end button",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with end button",
+        "placeholder": "Email",
+        "type": "email",
+        "disabled": true,
+        "addonAfterType": "button",
+        "addonAfterText": "Send",
+        "addonAfterButtonLabel": "Send"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-22",
+      "label": "Input with button",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with button",
+        "placeholder": "Email",
+        "type": "email",
+        "actionType": "text",
+        "actionLabel": "Send"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-23",
+      "label": "Show/hide password input",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Show/hide password input",
+        "placeholder": "Password",
+        "disabled": true,
+        "type": "password",
+        "showPasswordToggle": true,
+        "prefixIcon": "eye",
+        "suffixIcon": "eyeOff",
+        "suffix": "{isVisible ? (",
+        "addonAfterType": "text",
+        "addonAfterText": "{isVisible ? ("
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-24",
+      "label": "Input with clear button",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with clear button",
+        "placeholder": "Type something...",
+        "type": "text",
+        "disabled": true,
+        "showClearButton": true,
+        "prefixIcon": "x",
+        "suffixIcon": "x"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-25",
+      "label": "Search input with &lt;kbd&gt;",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Search input with &lt;kbd&gt;",
+        "placeholder": "Search...",
+        "type": "search"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-26",
+      "label": "Search input with icon and button",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Search input with icon and button",
+        "placeholder": "Search...",
+        "type": "search",
+        "disabled": true,
+        "prefixIcon": "search",
+        "suffixIcon": "search"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-27",
+      "label": "Search input with loader",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Search input with loader",
+        "placeholder": "Search...",
+        "type": "search",
+        "disabled": true,
+        "showClearButton": true,
+        "loading": true,
+        "prefixIcon": "search",
+        "suffixIcon": "search",
+        "prefix": "{isLoading ? ("
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-28",
+      "label": "Number input with plus/minus buttons",
+      "widgetType": "EditableNumber",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-29",
+      "label": "Number input with chevrons",
+      "widgetType": "EditableNumber",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-30",
+      "label": "File input",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "File input",
+        "type": "file"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-31",
+      "label": "Input with overlapping label",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with overlapping label",
+        "placeholder": "Email",
+        "type": "email",
+        "disabled": true
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-32",
+      "label": "comp-32",
+      "widgetType": "TextInput",
+      "props": {
+        "placeholder": " ",
+        "type": "email"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-33",
+      "label": "Input with inset label",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with inset label",
+        "placeholder": "Email",
+        "type": "email",
+        "disabled": true
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-34",
+      "label": "Input with character limit",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with character limit",
+        "type": "text",
+        "disabled": true,
+        "suffix": "{characterCount}/{limit}"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-35",
+      "label": "Input with characters left",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with characters left",
+        "type": "text"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-36",
+      "label": "Date input",
+      "widgetType": "DatePicker",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-37",
+      "label": "Time input",
+      "widgetType": "TimePicker",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-38",
+      "label": "Time input with start icon",
+      "widgetType": "TimePicker",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-39",
+      "label": "Time input with end icon",
+      "widgetType": "TimePicker",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-40",
+      "label": "Date and time input",
+      "widgetType": "DatePicker",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-41",
+      "label": "Date picker",
+      "widgetType": "DatePicker",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-42",
+      "label": "Date range picker",
+      "widgetType": "DateRangePicker",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-43",
+      "label": "Date range picker (unavailable dates)",
+      "widgetType": "DateRangePicker",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-44",
+      "label": "OTP input single",
+      "widgetType": "OtpInput",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-45",
+      "label": "OTP input double",
+      "widgetType": "OtpInput",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-46",
+      "label": "PhoneIcon number input",
+      "widgetType": "PhoneNumberInput",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-47",
+      "label": "Card Number",
+      "widgetType": "StripeCardForm",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-48",
+      "label": "Expiry date",
+      "widgetType": "StripeCardForm",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-49",
+      "label": "Code",
+      "widgetType": "StripeCardForm",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-50",
+      "label": "Card Details",
+      "widgetType": "StripeCardForm",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-51",
+      "label": "Input with password strength indicator",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with password strength indicator",
+        "placeholder": "Password",
+        "disabled": true,
+        "type": "password",
+        "showPasswordToggle": true,
+        "prefixIcon": "check",
+        "suffixIcon": "eye",
+        "suffix": "{isVisible ? (",
+        "addonAfterType": "text",
+        "addonAfterText": "{isVisible ? ("
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-52",
+      "label": "Read-only input",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Read-only input",
+        "placeholder": "Email",
+        "type": "email",
+        "readOnly": true
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-53",
+      "label": "Copy to clipboard",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Copy to clipboard",
+        "type": "text",
+        "readOnly": true,
+        "disabled": true,
+        "prefixIcon": "check",
+        "suffixIcon": "copy"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-54",
+      "label": "Input with mask",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Input with mask",
+        "placeholder": "AB12 CDE",
+        "type": "text",
+        "pattern": "regex"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-55",
+      "label": "Timestamp",
+      "widgetType": "TextInput",
+      "props": {
+        "label": "Timestamp",
+        "placeholder": "00:00:00",
+        "type": "text",
+        "pattern": "regex"
+      },
+      "notes": []
+    },
+    {
+      "name": "comp-56",
+      "label": "Input with tags",
+      "widgetType": "Tags",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-57",
+      "label": "Input with inner tags",
+      "widgetType": "Tags",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-58",
+      "label": "OTP input (spaced)",
+      "widgetType": "OtpInput",
+      "props": {},
+      "notes": []
+    },
+    {
+      "name": "comp-59",
+      "label": "Simple textarea",
+      "widgetType": "TextArea",
+      "props": {},
+      "notes": []
+    }
+  ]
+}

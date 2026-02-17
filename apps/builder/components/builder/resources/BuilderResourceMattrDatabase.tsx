@@ -153,15 +153,15 @@ export const BuilderResourceMattrDatabase = ({
     <div className="space-y-4">
       <ToggleGroup
         type="single"
-        size="sm"
+        size="small"
         value={editorMode}
         onValueChange={(value) => handleUpdate({ editorMode: value || 'sql' })}
         className="w-full justify-start"
       >
-        <ToggleGroupItem value="sql" size="sm" className="h-8 flex-1">
+        <ToggleGroupItem value="sql" size="small" className="h-8 flex-1">
           SQL
         </ToggleGroupItem>
-        <ToggleGroupItem value="gui" size="sm" className="h-8 flex-1">
+        <ToggleGroupItem value="gui" size="small" className="h-8 flex-1">
           GUI
         </ToggleGroupItem>
       </ToggleGroup>
@@ -286,16 +286,16 @@ export const BuilderResourceMattrDatabase = ({
             <div className="text-[11px] uppercase text-foreground-muted">Changeset</div>
             <ToggleGroup
               type="single"
-              size="sm"
+              size="small"
               value={changesetIsObject ? 'object' : 'pairs'}
               onValueChange={(value) =>
                 handleUpdate({ changesetIsObject: value === 'object' })
               }
             >
-              <ToggleGroupItem value="pairs" size="sm" className="h-8">
+              <ToggleGroupItem value="pairs" size="small" className="h-8">
                 Key value pairs
               </ToggleGroupItem>
-              <ToggleGroupItem value="object" size="sm" className="h-8">
+              <ToggleGroupItem value="object" size="small" className="h-8">
                 Object
               </ToggleGroupItem>
             </ToggleGroup>

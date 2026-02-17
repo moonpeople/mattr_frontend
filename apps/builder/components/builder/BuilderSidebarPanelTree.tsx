@@ -1,20 +1,8 @@
-import type { ReactNode } from 'react'
+import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import { useMemo, useState } from 'react'
 import { Boxes, ChevronDown, ChevronRight, ChevronsUpDown, Layers, LayoutGrid, ListTree, Plus, X } from 'lucide-react'
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  DragOverlay,
-  type DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 
-import type { WidgetDefinition } from 'widgets'
+import type { WidgetDefinition } from 'widgets/runtime'
 import {
   Button,
   PopoverContent_Shadcn_,
@@ -25,11 +13,20 @@ import {
   cn,
 } from 'ui'
 
-import type { BuilderPage, BuilderWidgetInstance } from './types'
+import type {
+  BuilderPage,
+  BuilderSelectedNode,
+  BuilderWidgetAddOptions,
+  BuilderWidgetInstance,
+} from './types'
+import {
+  canAddAppFrame,
+  canAddPageFrame,
+  createPageFramesFromWidgets,
+  isFrameType,
+} from './types'
 import {
   type BuilderWidgetMode,
-  findWidgetById,
-  TreeDragOverlayRow,
   TreeRow,
 } from './BuilderSidebarItems'
 
@@ -39,8 +36,12 @@ const commonWidgetTypes = [
   'Table',
   'Text',
   'Button',
+  'OutlineButton',
+  'CloseButton',
   'TextInput',
-  'NumberInput',
+  'Email',
+  'Url',
+  'EditableNumber',
   'Select',
   'Container',
   'Form',
@@ -54,14 +55,12 @@ const commonWidgetTypes = [
 const globalComponentOptions = [
   { type: 'GlobalHeader', label: 'Header', icon: <LayoutGrid size={14} /> },
   { type: 'GlobalSidebar', label: 'Sidebar', icon: <Layers size={14} /> },
-  { type: 'GlobalDrawer', label: 'Drawer', icon: <ListTree size={14} /> },
-  { type: 'GlobalModal', label: 'Modal', icon: <Boxes size={14} /> },
-  { type: 'GlobalSplitPane', label: 'Split pane', icon: <LayoutGrid size={14} /> },
 ]
 
-const pageGlobalOptions = [
-  { type: 'GlobalHeader', label: 'Header', icon: <LayoutGrid size={14} /> },
-  { type: 'GlobalSidebar', label: 'Sidebar', icon: <Layers size={14} /> },
+const pageFrameOptions = [
+  { type: 'GlobalSplitPane', label: 'Split pane', icon: <LayoutGrid size={14} /> },
+  { type: 'GlobalDrawer', label: 'Drawer', icon: <ListTree size={14} /> },
+  { type: 'GlobalModal', label: 'Modal', icon: <Boxes size={14} /> },
 ]
 
 type BuilderSidebarPanelTreeProps = {
@@ -70,16 +69,14 @@ type BuilderSidebarPanelTreeProps = {
   onClose?: () => void
   activePage: BuilderPage | null
   pages: BuilderPage[]
-  globalWidgets: BuilderWidgetInstance[]
-  pageGlobals: BuilderWidgetInstance[]
-  selectedWidgetId?: string | null
-  selectedGlobalWidgetId?: string | null
-  selectedPageComponent?: boolean
+  appFrameWidgets: BuilderWidgetInstance[]
+  pageFrameWidgets: BuilderWidgetInstance[]
+  selectedNode?: BuilderSelectedNode | null
   widgets: WidgetDefinition[]
   onSelectPage: (pageId: string) => void
   onSelectWidget?: (widgetId: string) => void
-  onSelectGlobalWidget?: (widgetId: string) => void
-  onSelectPageComponent?: () => void
+  onSelectFrameWidget?: (widgetId: string) => void
+  onSelectPageMain?: () => void
   onToggleWidgetHidden?: (widgetId: string, mode: BuilderWidgetMode) => void
   onReorderWidget?: (
     activeId: string,
@@ -87,9 +84,9 @@ type BuilderSidebarPanelTreeProps = {
     parentId: string | null,
     mode: BuilderWidgetMode
   ) => void
-  onAddGlobalWidget?: (type: string) => void
-  onAddPageGlobalWidget?: (type: string) => void
-  onAddWidgetAtRoot?: (widgetType: string) => void
+  onAddAppFrameWidget?: (type: string) => void
+  onAddPageFrameWidget?: (type: string) => void
+  onAddWidgetAtRoot?: (widgetType: string, options?: BuilderWidgetAddOptions) => void
 }
 
 export const BuilderSidebarPanelTree = ({
@@ -98,20 +95,17 @@ export const BuilderSidebarPanelTree = ({
   onClose,
   activePage,
   pages,
-  globalWidgets,
-  pageGlobals,
-  selectedWidgetId,
-  selectedGlobalWidgetId,
-  selectedPageComponent,
+  appFrameWidgets,
+  pageFrameWidgets,
+  selectedNode,
   widgets,
   onSelectPage,
   onSelectWidget,
-  onSelectGlobalWidget,
-  onSelectPageComponent,
+  onSelectFrameWidget,
+  onSelectPageMain,
   onToggleWidgetHidden,
-  onReorderWidget,
-  onAddGlobalWidget,
-  onAddPageGlobalWidget,
+  onAddAppFrameWidget,
+  onAddPageFrameWidget,
   onAddWidgetAtRoot,
 }: BuilderSidebarPanelTreeProps) => {
   const [isGlobalOpen, setIsGlobalOpen] = useState(true)
@@ -122,14 +116,8 @@ export const BuilderSidebarPanelTree = ({
   const [globalAddOpen, setGlobalAddOpen] = useState(false)
   const [pageAddOpen, setPageAddOpen] = useState(false)
   const [pageSelectOpen, setPageSelectOpen] = useState(false)
-  const [activeDrag, setActiveDrag] = useState<{ id: string; mode: BuilderWidgetMode } | null>(
-    null
-  )
-
-  // DND-kit: drag/drop только по вертикали.
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))
   const availableWidgets = useMemo(
-    () => widgets.filter((widget) => widget.category !== 'globals'),
+    () => widgets.filter((widget) => widget.category !== 'globals' && !isFrameType(widget.type)),
     [widgets]
   )
   const commonWidgets = useMemo(() => {
@@ -138,8 +126,80 @@ export const BuilderSidebarPanelTree = ({
       .filter(Boolean) as WidgetDefinition[]
   }, [availableWidgets])
   const widgetMenu = commonWidgets.length > 0 ? commonWidgets : availableWidgets.slice(0, 8)
+  const activePageWidgets = useMemo(
+    () => activePage?.pageLayout.widgets ?? [],
+    [activePage]
+  )
+  const appFrames = useMemo(
+    () =>
+      appFrameWidgets.filter(
+        (widget) => widget.type === 'GlobalHeader' || widget.type === 'GlobalSidebar'
+      ),
+    [appFrameWidgets]
+  )
+  const appLayoutForAdd = useMemo(
+    () => ({
+      header: appFrames.find((widget) => widget.type === 'GlobalHeader'),
+      sidebar: appFrames.find((widget) => widget.type === 'GlobalSidebar'),
+    }),
+    [appFrames]
+  )
+  const globalFrameMenuOptions = useMemo(
+    () =>
+      globalComponentOptions.map((option) => ({
+        ...option,
+        addCheck: canAddAppFrame(option.type, appLayoutForAdd),
+      })),
+    [appLayoutForAdd]
+  )
+  const pageFramesForAdd = useMemo(
+    () => createPageFramesFromWidgets(pageFrameWidgets),
+    [pageFrameWidgets]
+  )
+  const pageFrameMenuOptions = useMemo(
+    () =>
+      pageFrameOptions.map((option) => ({
+        ...option,
+        addCheck: canAddPageFrame(option.type, pageFramesForAdd),
+      })),
+    [pageFramesForAdd]
+  )
+  const pageSplitFrames = useMemo(
+    () => pageFrameWidgets.filter((widget) => widget.type === 'GlobalSplitPane'),
+    [pageFrameWidgets]
+  )
+  const pageDrawerFrames = useMemo(
+    () => pageFrameWidgets.filter((widget) => widget.type === 'GlobalDrawer'),
+    [pageFrameWidgets]
+  )
+  const pageModalFrames = useMemo(
+    () => pageFrameWidgets.filter((widget) => widget.type === 'GlobalModal'),
+    [pageFrameWidgets]
+  )
+  const pageOtherFrames = useMemo(
+    () =>
+      pageFrameWidgets.filter(
+        (widget) =>
+          widget.type !== 'GlobalSplitPane' &&
+          widget.type !== 'GlobalDrawer' &&
+          widget.type !== 'GlobalModal'
+      ),
+    [pageFrameWidgets]
+  )
+  const selectedWidgetId =
+    selectedNode?.kind === 'widget' && selectedNode.scope === 'main'
+      ? selectedNode.widgetId
+      : null
+  const selectedFrameWidgetId =
+    selectedNode?.kind === 'frame'
+      ? selectedNode.frameId
+      : selectedNode?.kind === 'widget' && selectedNode.scope !== 'main'
+        ? selectedNode.widgetId
+        : null
+  const selectedPageMain =
+    selectedNode?.kind === 'main' && selectedNode.pageId === activePage?.id
   const isPageSettingsSelected = Boolean(
-    activePage && !selectedWidgetId && !selectedGlobalWidgetId && !selectedPageComponent
+    activePage && selectedNode?.kind === 'page' && selectedNode.pageId === activePage.id
   )
 
   // Фокусируем виджет на канвасе из дерева.
@@ -156,23 +216,6 @@ export const BuilderSidebarPanelTree = ({
     target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
   }
 
-  // Данные активного dnd-элемента для оверлея.
-  const activeDragWidget = useMemo(() => {
-    if (!activeDrag?.id) {
-      return null
-    }
-    const sourceWidgets =
-      activeDrag.mode === 'global'
-        ? globalWidgets
-        : activeDrag.mode === 'page-global'
-          ? pageGlobals
-          : activePage?.widgets
-    if (!sourceWidgets) {
-      return null
-    }
-    return findWidgetById(sourceWidgets, activeDrag.id)
-  }, [activeDrag, activePage, globalWidgets, pageGlobals])
-
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between pl-3 pr-2">
@@ -182,60 +225,16 @@ export const BuilderSidebarPanelTree = ({
         <Button className="px-1" type="text" size="tiny" icon={<X size={14} />} onClick={() => onClose?.()} />
       </div>
       <Separator />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        modifiers={[restrictToVerticalAxis]}
-        onDragStart={(event: DragStartEvent) => {
-          const data = event.active.data.current as
-            | { parentId: string | null; mode: BuilderWidgetMode }
-            | undefined
-          setActiveDrag({
-            id: String(event.active.id),
-            mode: data?.mode ?? 'page',
-          })
-        }}
-        onDragEnd={(event: DragEndEvent) => {
-          const { active, over } = event
-          setActiveDrag(null)
-          if (!over || active.id === over.id) {
-            return
-          }
-          const activeData = active.data.current as
-            | { parentId: string | null; mode: BuilderWidgetMode }
-            | undefined
-          const overData = over.data.current as
-            | { parentId: string | null; mode: BuilderWidgetMode }
-            | undefined
-          if (!activeData || !overData) {
-            return
-          }
-          if (activeData.mode !== overData.mode) {
-            return
-          }
-          if (activeData.parentId !== overData.parentId) {
-            return
-          }
-          onReorderWidget?.(
-            String(active.id),
-            String(over.id),
-            activeData.parentId ?? null,
-            activeData.mode
-          )
-        }}
-        onDragCancel={() => setActiveDrag(null)}
-      >
         <ScrollArea className="min-h-0 flex-1">
-          <div className="space-y-2 px-2 py-2">
-            <div>
-              <div className="flex items-center justify-between px-1.5 py-1 text-[10px] uppercase text-foreground-muted">
+          <div className="space-y-2  py-2">
+            <div className='px-1'>
+              <div className="flex items-center justify-between px-1 text-xs uppercase text-foreground">
                 <button
                   type="button"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 px-1"
                   onClick={() => setIsGlobalOpen((prev) => !prev)}
                 >
-                  
-                  <span>GLOBAL</span>
+                  <span className='font-mono'>APP</span>
                 </button>
                 <div className='flex gap-1'>
                   <Popover_Shadcn_ open={globalAddOpen} onOpenChange={setGlobalAddOpen}>
@@ -245,17 +244,21 @@ export const BuilderSidebarPanelTree = ({
                     <PopoverContent_Shadcn_ className="w-56 p-2" align="start">
                       <div className="space-y-1">
                         <div className="px-2 py-1 text-xs uppercase text-foreground-muted">
-                          Add global component
+                          Add app frame
                         </div>
-                        {globalComponentOptions.map((option) => (
+                        {globalFrameMenuOptions.map((option) => (
                           <Button
                             key={option.type}
                             type="text"
                             size="tiny"
                             className="w-full justify-start"
                             icon={option.icon}
+                            disabled={!option.addCheck.allowed}
                             onClick={() => {
-                              onAddGlobalWidget?.(option.type)
+                              if (!option.addCheck.allowed) {
+                                return
+                              }
+                              onAddAppFrameWidget?.(option.type)
                               setGlobalAddOpen(false)
                             }}
                           >
@@ -265,55 +268,42 @@ export const BuilderSidebarPanelTree = ({
                       </div>
                     </PopoverContent_Shadcn_>
                   </Popover_Shadcn_>
-                  <button
-                    type="button"
-                    className="flex items-center gap-2"
-                    onClick={() => setIsGlobalOpen((prev) => !prev)}
-                  >
-                    <ChevronsUpDown size={12} />
-                  </button>
                 </div>
               </div>
               {isGlobalOpen && (
-                <div className="space-y-3">
-                  <SortableContext
-                    items={globalWidgets.map((widget) => widget.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-1">
-                      {globalWidgets.length > 0 ? (
-                        globalWidgets.map((widget) => (
+                <div className="space-y-1">
+                  <div className="space-y-1">
+                    {appFrames.length > 0 ? (
+                      appFrames.map((widget) => (
                           <TreeRow
                             key={widget.id}
                             widget={widget}
                             depth={0}
-                            mode="global"
-                            parentId={null}
+                            mode="app-frame"
                             collapsed={collapsed}
                             setCollapsed={setCollapsed}
-                            selectedWidgetId={selectedWidgetId}
-                            selectedGlobalWidgetId={selectedGlobalWidgetId}
-                            onSelectWidget={onSelectWidget}
-                            onSelectGlobalWidget={onSelectGlobalWidget}
-                            onToggleWidgetHidden={onToggleWidgetHidden}
-                            onFocusWidget={focusWidget}
-                          />
-                        ))
-                      ) : (
-                        <div className="px-1.5 py-1 text-[11px] text-foreground-muted">
-                          No global components yet.
-                        </div>
-                      )}
-                    </div>
-                  </SortableContext>
+                          selectedWidgetId={selectedWidgetId}
+                          selectedFrameWidgetId={selectedFrameWidgetId}
+                          onSelectWidget={onSelectWidget}
+                          onSelectFrameWidget={onSelectFrameWidget}
+                          onToggleWidgetHidden={onToggleWidgetHidden}
+                          onFocusWidget={focusWidget}
+                        />
+                      ))
+                    ) : (
+                      <div className="px-1.5 py-1 text-[11px] text-foreground-muted">
+                        No app frame components yet.
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
             <Separator />
-            <div>
+            <div className='px-2'>
               <div
                 className={cn(
-                  'flex items-center justify-between rounded-sm px-1.5 py-1 text-[10px] uppercase transition',
+                  'flex items-center justify-between rounded-sm px-1.5 text-xs uppercase transition',
                   isPageSettingsSelected
                     ? 'bg-brand-500/10 text-foreground'
                     : 'text-foreground-muted hover:bg-surface-200'
@@ -330,7 +320,7 @@ export const BuilderSidebarPanelTree = ({
                     <PopoverTrigger_Shadcn_ asChild>
                       <button
                         type="button"
-                        className="flex items-center gap-1 text-[11px] normal-case text-foreground"
+                        className="flex items-center gap-1 text-xs normal-case text-foreground"
                         onClick={(event) => event.stopPropagation()}
                       >
                         <span>{activePage?.name ?? 'Page'}</span>
@@ -375,44 +365,50 @@ export const BuilderSidebarPanelTree = ({
                       />
                     </PopoverTrigger_Shadcn_>
                     <PopoverContent_Shadcn_ className="w-64 p-2" align="end">
-                      <div className="space-y-2">
-                        <div className="px-2 py-1 text-[11px] uppercase text-foreground-muted">
-                          Add layout
+                      <ScrollArea className="max-h-80">
+                        <div className="space-y-2 pr-1">
+                          <div className="px-2 py-1 text-[11px] uppercase text-foreground-muted">
+                            Add page layout
+                          </div>
+                          {pageFrameMenuOptions.map((option) => (
+                            <Button
+                              key={option.type}
+                              type="text"
+                              size="tiny"
+                              className="w-full justify-start"
+                              icon={option.icon}
+                              disabled={!option.addCheck.allowed}
+                              onClick={() => {
+                                if (!option.addCheck.allowed) {
+                                  return
+                                }
+                                onAddPageFrameWidget?.(option.type)
+                                setPageAddOpen(false)
+                              }}
+                            >
+                              {option.label}
+                            </Button>
+                          ))}
+                          <Separator />
+                          <div className="px-2 py-1 text-[11px] uppercase text-foreground-muted">
+                            Add component
+                          </div>
+                          {widgetMenu.map((widget) => (
+                            <Button
+                              key={widget.type}
+                              type="text"
+                              size="tiny"
+                              className="w-full justify-start"
+                              onClick={() => {
+                                onAddWidgetAtRoot?.(widget.type)
+                                setPageAddOpen(false)
+                              }}
+                            >
+                              {widget.label}
+                            </Button>
+                          ))}
                         </div>
-                        {pageGlobalOptions.map((option) => (
-                          <Button
-                            key={option.type}
-                            type="text"
-                            size="tiny"
-                            className="w-full justify-start"
-                            icon={option.icon}
-                            onClick={() => {
-                              onAddPageGlobalWidget?.(option.type)
-                              setPageAddOpen(false)
-                            }}
-                          >
-                            {option.label}
-                          </Button>
-                        ))}
-                        <Separator />
-                        <div className="px-2 py-1 text-[11px] uppercase text-foreground-muted">
-                          Add component
-                        </div>
-                        {widgetMenu.map((widget) => (
-                          <Button
-                            key={widget.type}
-                            type="text"
-                            size="tiny"
-                            className="w-full justify-start"
-                            onClick={() => {
-                              onAddWidgetAtRoot?.(widget.type)
-                              setPageAddOpen(false)
-                            }}
-                          >
-                            {widget.label}
-                          </Button>
-                        ))}
-                      </div>
+                      </ScrollArea>
                     </PopoverContent_Shadcn_>
                   </Popover_Shadcn_>
                   <button
@@ -429,40 +425,70 @@ export const BuilderSidebarPanelTree = ({
               </div>
               {isPageOpen && (
                 <div className="space-y-1">
-                  {pageGlobals.length > 0 && (
-                    <SortableContext
-                      items={pageGlobals.map((widget) => widget.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-0.5">
-                        {pageGlobals.map((widget) => (
-                          <TreeRow
-                            key={widget.id}
-                            widget={widget}
-                            depth={0}
-                            mode="page-global"
-                            parentId={null}
-                            collapsed={collapsed}
-                            setCollapsed={setCollapsed}
-                            selectedWidgetId={selectedWidgetId}
-                            selectedGlobalWidgetId={selectedGlobalWidgetId}
-                            onSelectWidget={onSelectWidget}
-                            onSelectGlobalWidget={onSelectGlobalWidget}
-                            onToggleWidgetHidden={onToggleWidgetHidden}
-                            onFocusWidget={focusWidget}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
+                  {pageSplitFrames.length > 0 && (
+                    <FrameGroup
+                      title="Split pane"
+                      widgets={pageSplitFrames}
+                      collapsed={collapsed}
+                      setCollapsed={setCollapsed}
+                      selectedWidgetId={selectedWidgetId}
+                      selectedFrameWidgetId={selectedFrameWidgetId}
+                      onSelectWidget={onSelectWidget}
+                      onSelectFrameWidget={onSelectFrameWidget}
+                      onToggleWidgetHidden={onToggleWidgetHidden}
+                      onFocusWidget={focusWidget}
+                    />
+                  )}
+                  {pageDrawerFrames.length > 0 && (
+                    <FrameGroup
+                      title="Drawers"
+                      widgets={pageDrawerFrames}
+                      collapsed={collapsed}
+                      setCollapsed={setCollapsed}
+                      selectedWidgetId={selectedWidgetId}
+                      selectedFrameWidgetId={selectedFrameWidgetId}
+                      onSelectWidget={onSelectWidget}
+                      onSelectFrameWidget={onSelectFrameWidget}
+                      onToggleWidgetHidden={onToggleWidgetHidden}
+                      onFocusWidget={focusWidget}
+                    />
+                  )}
+                  {pageModalFrames.length > 0 && (
+                    <FrameGroup
+                      title="Modals"
+                      widgets={pageModalFrames}
+                      collapsed={collapsed}
+                      setCollapsed={setCollapsed}
+                      selectedWidgetId={selectedWidgetId}
+                      selectedFrameWidgetId={selectedFrameWidgetId}
+                      onSelectWidget={onSelectWidget}
+                      onSelectFrameWidget={onSelectFrameWidget}
+                      onToggleWidgetHidden={onToggleWidgetHidden}
+                      onFocusWidget={focusWidget}
+                    />
+                  )}
+                  {pageOtherFrames.length > 0 && (
+                    <FrameGroup
+                      title="Other frames"
+                      widgets={pageOtherFrames}
+                      collapsed={collapsed}
+                      setCollapsed={setCollapsed}
+                      selectedWidgetId={selectedWidgetId}
+                      selectedFrameWidgetId={selectedFrameWidgetId}
+                      onSelectWidget={onSelectWidget}
+                      onSelectFrameWidget={onSelectFrameWidget}
+                      onToggleWidgetHidden={onToggleWidgetHidden}
+                      onFocusWidget={focusWidget}
+                    />
                   )}
                   <div
                     className={cn(
                       'flex w-full items-center justify-between rounded-sm px-1.5 py-1 text-[10px] uppercase transition',
-                      selectedPageComponent
+                      selectedPageMain
                         ? 'bg-brand-500/10 text-foreground'
                         : 'text-foreground-muted hover:bg-surface-200'
                     )}
-                    onClick={() => onSelectPageComponent?.()}
+                    onClick={() => onSelectPageMain?.()}
                   >
                     <span className="flex items-center gap-1.5">
                       <button
@@ -480,49 +506,42 @@ export const BuilderSidebarPanelTree = ({
                     </span>
                   </div>
                   {isRootOpen && (
-                    <SortableContext
-                      items={activePage?.widgets?.map((widget) => widget.id) ?? []}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-0.5">
-                        {activePage?.widgets?.length
-                          ? activePage.widgets.map((widget) => (
-                              <TreeRow
-                                key={widget.id}
-                                widget={widget}
-                                depth={0}
-                                mode="page"
-                                parentId={null}
-                                collapsed={collapsed}
-                                setCollapsed={setCollapsed}
-                                selectedWidgetId={selectedWidgetId}
-                                selectedGlobalWidgetId={selectedGlobalWidgetId}
-                                onSelectWidget={onSelectWidget}
-                                onSelectGlobalWidget={onSelectGlobalWidget}
-                                onToggleWidgetHidden={onToggleWidgetHidden}
-                                onFocusWidget={focusWidget}
-                              />
-                            ))
-                          : (
-                            <div className="px-1.5 py-1 text-[11px] text-foreground-muted">
-                              No components on this page.
-                            </div>
-                          )}
-                      </div>
-                    </SortableContext>
+                    <div className="space-y-0.5">
+                      {activePageWidgets.length
+                        ? activePageWidgets.map((widget) => (
+                            <TreeRow
+                              key={widget.id}
+                              widget={widget}
+                              depth={0}
+                              mode="page"
+                              collapsed={collapsed}
+                              setCollapsed={setCollapsed}
+                              selectedWidgetId={selectedWidgetId}
+                              selectedFrameWidgetId={selectedFrameWidgetId}
+                              onSelectWidget={onSelectWidget}
+                              onSelectFrameWidget={onSelectFrameWidget}
+                              onToggleWidgetHidden={onToggleWidgetHidden}
+                              onFocusWidget={focusWidget}
+                            />
+                          ))
+                        : (
+                          <div className="px-1.5 py-1 text-[11px] text-foreground-muted">
+                            No components on this page.
+                          </div>
+                        )}
+                    </div>
                   )}
                 </div>
               )}
             </div>
             <Separator />
-            <div>
-              <div className="flex items-center justify-between px-1.5 py-1 text-[10px] uppercase text-foreground-muted">
+            <div className='px-2'>
+              <div className="flex items-center justify-between px-1.5 text-xs uppercase text-foreground">
                 <button
                   type="button"
                   className="flex items-center gap-2"
                   onClick={() => setIsGraphOpen((prev) => !prev)}
                 >
-                  {isGraphOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                   <span>Graph</span>
                 </button>
                 <div className="flex items-center gap-2 text-foreground-muted">
@@ -538,8 +557,52 @@ export const BuilderSidebarPanelTree = ({
             </div>
           </div>
         </ScrollArea>
-        <DragOverlay>{activeDragWidget ? <TreeDragOverlayRow widget={activeDragWidget} /> : null}</DragOverlay>
-      </DndContext>
     </div>
   )
 }
+
+type FrameGroupProps = {
+  title: string
+  widgets: BuilderWidgetInstance[]
+  collapsed: Record<string, boolean>
+  setCollapsed: Dispatch<SetStateAction<Record<string, boolean>>>
+  selectedWidgetId?: string | null
+  selectedFrameWidgetId?: string | null
+  onSelectWidget?: (widgetId: string) => void
+  onSelectFrameWidget?: (widgetId: string) => void
+  onToggleWidgetHidden?: (widgetId: string, mode: BuilderWidgetMode) => void
+  onFocusWidget?: (widgetId: string) => void
+}
+
+const FrameGroup = ({
+  title,
+  widgets,
+  collapsed,
+  setCollapsed,
+  selectedWidgetId,
+  selectedFrameWidgetId,
+  onSelectWidget,
+  onSelectFrameWidget,
+  onToggleWidgetHidden,
+  onFocusWidget,
+}: FrameGroupProps) => (
+  <div className="space-y-0.5">
+    <div className="px-1.5 py-0.5 text-[10px] uppercase text-foreground-muted">{title}</div>
+    {widgets.map((widget) => (
+      <TreeRow
+        key={widget.id}
+        widget={widget}
+        depth={0}
+        mode="page-frame"
+        collapsed={collapsed}
+        setCollapsed={setCollapsed}
+        selectedWidgetId={selectedWidgetId}
+        selectedFrameWidgetId={selectedFrameWidgetId}
+        onSelectWidget={onSelectWidget}
+        onSelectFrameWidget={onSelectFrameWidget}
+        onToggleWidgetHidden={onToggleWidgetHidden}
+        onFocusWidget={onFocusWidget}
+      />
+    ))}
+  </div>
+)

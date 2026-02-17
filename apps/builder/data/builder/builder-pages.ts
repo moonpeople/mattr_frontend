@@ -39,7 +39,6 @@ export type BuilderPageLayoutUpdateVariables = {
   appId: string
   pageId: string
   layout?: Record<string, unknown>
-  widgets?: unknown[]
 }
 
 export type BuilderPageMenuUpdateVariables = {
@@ -68,23 +67,6 @@ const buildDraftPayload = (
   }
 }
 
-const extractGlobals = (pages: BuilderDraftSchema['pages']) => {
-  if (!Array.isArray(pages)) {
-    return []
-  }
-  for (const page of pages) {
-    if (!isRecord(page)) {
-      continue
-    }
-    const layout = isRecord(page.layout) ? page.layout : {}
-    const globals = layout.globals
-    if (Array.isArray(globals) && globals.length > 0) {
-      return globals
-    }
-  }
-  return []
-}
-
 const toPageRecord = (page: Record<string, unknown>, appId: string): BuilderPageRecord | null => {
   const id = typeof page.id === 'string' ? page.id : null
   if (!id) {
@@ -95,7 +77,7 @@ const toPageRecord = (page: Record<string, unknown>, appId: string): BuilderPage
     appId,
     name: typeof page.name === 'string' ? page.name : 'Page',
     access: typeof page.access === 'string' ? page.access : 'auth',
-    menu: page.menu ?? null,
+    menu: isRecord(page.menu) ? page.menu : null,
     layout: isRecord(page.layout) ? page.layout : {},
   }
 }
@@ -153,12 +135,11 @@ export const useCreateBuilderPageMutation = ({
   const queryClient = useQueryClient()
 
   return useMutation<BuilderPageRecord, BuilderPagesError, BuilderPageCreateVariables>({
-    mutationFn: ({ appId, name, access }) => {
+    mutationFn: async ({ appId, name, access }) => {
       const draft = queryClient.getQueryData(builderKeys.draft(appId)) as
         | { schema?: BuilderDraftSchema; id?: string; appId?: string; updatedAt?: string; updatedBy?: string | null }
         | undefined
       const schema = normalizeDraftSchema(draft?.schema, appId)
-      const globals = extractGlobals(schema.pages)
       const pageId = uuidv4()
       const newPage = {
         id: pageId,
@@ -166,11 +147,21 @@ export const useCreateBuilderPageMutation = ({
         access: access ?? 'auth',
         menu: null,
         layout: {
-          widgets: [],
-          globals,
-          pageGlobals: [],
+          pageLayout: {
+            main: {
+              expandToFit: false,
+              background: '',
+              paddingMode: 'normal',
+              paddingFxEnabled: false,
+              paddingFx: '',
+            },
+            widgets: [],
+            frames: {
+              drawers: [],
+              modals: [],
+            },
+          },
           pageMeta: null,
-          pageComponent: null,
         },
       }
       const nextSchema = {
@@ -198,7 +189,7 @@ export const useUpdateBuilderPageMutation = ({
   const queryClient = useQueryClient()
 
   return useMutation<BuilderPageRecord, BuilderPagesError, BuilderPageUpdateVariables>({
-    mutationFn: ({ appId, pageId, name, access }) => {
+    mutationFn: async ({ appId, pageId, name, access }) => {
       const draft = queryClient.getQueryData(builderKeys.draft(appId)) as
         | { schema?: BuilderDraftSchema; id?: string; appId?: string; updatedAt?: string; updatedBy?: string | null }
         | undefined
@@ -237,7 +228,7 @@ export const useUpdateBuilderPageLayoutMutation = ({
   const queryClient = useQueryClient()
 
   return useMutation<BuilderPageRecord, BuilderPagesError, BuilderPageLayoutUpdateVariables>({
-    mutationFn: ({ appId, pageId, layout, widgets }) => {
+    mutationFn: async ({ appId, pageId, layout }) => {
       const draft = queryClient.getQueryData(builderKeys.draft(appId)) as
         | { schema?: BuilderDraftSchema; id?: string; appId?: string; updatedAt?: string; updatedBy?: string | null }
         | undefined
@@ -251,8 +242,12 @@ export const useUpdateBuilderPageLayoutMutation = ({
           ...(isRecord(page.layout) ? page.layout : {}),
           ...(isRecord(layout) ? layout : {}),
         }
-        if (Array.isArray(widgets)) {
-          nextLayout.widgets = widgets
+        if (isRecord(nextLayout.pageLayout)) {
+          delete nextLayout.widgets
+          delete nextLayout.pageGlobals
+          delete nextLayout.pageComponent
+          delete nextLayout.main
+          delete nextLayout.frames
         }
         const next = {
           ...page,
@@ -290,7 +285,7 @@ export const useUpdateBuilderPageMenuMutation = ({
     BuilderPagesError,
     BuilderPageMenuUpdateVariables
   >({
-    mutationFn: ({ appId, pageId, items }) => {
+    mutationFn: async ({ appId, pageId, items }) => {
       const draft = queryClient.getQueryData(builderKeys.draft(appId)) as
         | { schema?: BuilderDraftSchema; id?: string; appId?: string; updatedAt?: string; updatedBy?: string | null }
         | undefined
@@ -324,7 +319,7 @@ export const useDeleteBuilderPageMutation = ({
   const queryClient = useQueryClient()
 
   return useMutation<null, BuilderPagesError, { pageId: string; appId: string }>({
-    mutationFn: ({ pageId, appId }) => {
+    mutationFn: async ({ pageId, appId }) => {
       const draft = queryClient.getQueryData(builderKeys.draft(appId)) as
         | { schema?: BuilderDraftSchema; id?: string; appId?: string; updatedAt?: string; updatedBy?: string | null }
         | undefined

@@ -4,6 +4,7 @@ import * as TogglePrimitive from '@radix-ui/react-toggle'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 
+import { SIZE_VARIANTS, SIZE_VARIANTS_DEFAULT } from '../../../lib/constants'
 import { cn } from '../../../lib/utils/cn'
 
 const toggleVariants = cva(
@@ -16,14 +17,12 @@ const toggleVariants = cva(
           'bg-transparent border border-control hover:bg-accent hover:text-accent-foreground',
       },
       size: {
-        default: 'h-10 px-3',
-        sm: 'h-9 px-2.5',
-        lg: 'h-11 px-5',
+        ...SIZE_VARIANTS,
       },
     },
     defaultVariants: {
       variant: 'default',
-      size: 'default',
+      size: SIZE_VARIANTS_DEFAULT,
     },
   }
 )

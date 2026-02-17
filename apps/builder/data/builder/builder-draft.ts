@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import type { ResponseError, UseCustomMutationOptions, UseCustomQueryOptions } from 'types'
+import { ResponseError } from 'types'
+import type { UseCustomMutationOptions, UseCustomQueryOptions } from 'types'
 import { builderRequest, withProjectRef } from './builder-client'
 import { builderKeys } from './keys'
 import type { BuilderRuntimePayload } from './builder-runtime'
@@ -34,6 +35,12 @@ export const normalizeDraftSchema = (
   const rawPolicies = isRecord((rawViewer as Record<string, unknown>)?.policies)
     ? (rawViewer as Record<string, unknown>)?.policies
     : {}
+  const normalizedPolicies = Object.fromEntries(
+    Object.entries(rawPolicies as Record<string, unknown>).map(([key, value]) => [
+      key,
+      Boolean(value),
+    ])
+  ) as Record<string, boolean>
 
   return {
     appId: schema?.appId ?? appId,
@@ -41,12 +48,15 @@ export const normalizeDraftSchema = (
     projectRef: schema?.projectRef,
     orgSlug: schema?.orgSlug,
     rootScreen: schema?.rootScreen ?? null,
+    appLayout:
+      isRecord(schema?.appLayout) ? (schema?.appLayout as BuilderRuntimePayload['appLayout']) : undefined,
+    theme: schema?.theme,
     pages: Array.isArray(schema?.pages) ? schema?.pages : [],
     queries: Array.isArray(schema?.queries) ? schema?.queries : [],
     js: Array.isArray(schema?.js) ? schema?.js : [],
     viewer: {
       ...(rawViewer ?? {}),
-      policies: rawPolicies ?? {},
+      policies: normalizedPolicies,
     },
   }
 }

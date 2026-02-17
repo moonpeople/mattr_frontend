@@ -3,28 +3,28 @@
 
 @layer base {
   body {
-    @apply text-default;
+    @apply text-base;
   }
   h1 {
-    @apply heading-title;
+    @apply scroll-m-20 text-2xl tracking-tight;
   }
   h2 {
-    @apply heading-section;
+    @apply scroll-m-20 text-xl;
   }
   h3 {
-    @apply heading-subSection;
+    @apply scroll-m-20 text-base;
   }
   h4 {
-    @apply heading-default;
+    @apply scroll-m-20 text-sm font-medium;
   }
   h5 {
-    @apply heading-default;
+    @apply scroll-m-20 text-sm font-medium;
   }
   h6 {
-    @apply heading-compact;
+    @apply scroll-m-20 text-xs font-medium;
   }
   small {
-    @apply text-compact;
+    @apply text-xs;
   }
   strong {
     @apply font-medium;
@@ -76,11 +76,18 @@
   }
 
   .text-link-table-cell {
-    @apply truncate cursor-pointer underline underline-offset-4 decoration-foreground-muted/50 hover:decoration-foreground-lighter/80 transition-colors duration-100;
+    @apply truncate cursor-pointer underline underline-offset-4 decoration-foreground-muted hover:decoration-foreground-lighter transition-colors duration-100;
   }
 
-  // Pair with `code` elements for semantic consistency, e.g. <code className="text-code-inline">
   .text-code-inline {
-    @apply break-all text-xs tracking-tight bg-surface-200 border border-muted rounded-md px-1 py-0.5 text-foreground font-medium;
+    word-break: break-all;
+    font-size: 0.75rem;
+    letter-spacing: -0.025em;
+    background-color: hsl(var(--background-surface-200));
+    border: 1px solid hsl(var(--border-muted));
+    border-radius: 0.375rem;
+    padding: 0.125rem 0.25rem;
+    color: hsl(var(--foreground-default));
+    font-weight: 500;
   }
 }

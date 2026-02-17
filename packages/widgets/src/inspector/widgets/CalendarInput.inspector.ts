@@ -1,0 +1,46 @@
+import type { WidgetInspectorConfig } from '../../types'
+import { buildInspectorConfig } from '../fieldRegistry'
+
+const fieldKeys = [
+  'label',
+  'labelVariant',
+  'mode',
+  'displayMode',
+  'placeholder',
+  'value',
+  'startDate',
+  'endDate',
+  'showCalendarIcon',
+  'showClearButton',
+  'numberOfMonths',
+  'showOutsideDays',
+  'showWeekNumber',
+  'weekStartsOn',
+  'calendarCaptionLayout',
+  'fromYear',
+  'toYear',
+  'disabledDates',
+  'showInlineInput',
+  'closeOnSelect',
+  'showRangePresets',
+  'rangePresets',
+  'minuteStep',
+  'hour12',
+  'showTimeSlots',
+  'timeSlots',
+  'required',
+  'helperText',
+  'disabled',
+  'events',
+]
+
+export const CalendarInputInspector: WidgetInspectorConfig = buildInspectorConfig(fieldKeys, {
+  label: { section: 'Content', placeholder: 'Label' },
+  labelVariant: { section: 'Content' },
+  placeholder: { section: 'Content', placeholder: 'Select value' },
+  value: { section: 'Content', placeholder: 'YYYY-MM-DD', valueType: ['string', 'void'] },
+  startDate: { section: 'Content', placeholder: 'YYYY-MM-DD' },
+  endDate: { section: 'Content', placeholder: 'YYYY-MM-DD' },
+  helperText: { section: 'Add-ons', placeholder: 'Help text' },
+  events: { section: 'Interaction', placeholder: '[{"event":"change","type":"query","queryName":"onChange"}]' },
+})

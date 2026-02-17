@@ -8,7 +8,7 @@ import { cn } from '../../../lib/utils'
 import { toggleVariants } from './toggle'
 
 const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({
-  size: 'default',
+  size: 'medium',
   variant: 'default',
 })
 
@@ -19,7 +19,7 @@ const ToggleGroup = React.forwardRef<
 >(({ className, variant, size, children, ...props }, ref) => (
   <ToggleGroupPrimitive.Root
     ref={ref}
-    className={cn('flex items-center justify-center gap-1', className)}
+    className={cn('flex items-center justify-center ', className)}
     {...props}
   >
     <ToggleGroupContext.Provider value={{ variant, size }}>{children}</ToggleGroupContext.Provider>

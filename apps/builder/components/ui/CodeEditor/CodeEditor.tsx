@@ -1,7 +1,7 @@
 import Editor, { EditorProps, Monaco, OnChange, OnMount, useMonaco } from '@monaco-editor/react'
 import { merge, noop } from 'lodash'
 import type { IDisposable, editor } from 'monaco-editor'
-import { MutableRefObject, useEffect, useRef, useState } from 'react'
+import { MutableRefObject, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { Markdown } from 'components/interfaces/Markdown'
 import { useSelectedProjectQuery } from 'hooks/misc/useSelectedProject'
@@ -9,6 +9,7 @@ import { formatSql } from 'lib/formatSql'
 import { timeout } from 'lib/helpers'
 import { cn, LogoLoader } from 'ui'
 import { alignEditor } from './CodeEditor.utils'
+import { CSS_PROPERTY_SUGGESTIONS } from './css-properties'
 
 type CodeEditorActions = { enabled: boolean; callback: (value: any) => void }
 const DEFAULT_ACTIONS = {
@@ -42,7 +43,7 @@ type CustomSuggestionItem = {
   documentation?: string
   fullPath: string
   appendDot?: boolean
-  source?: 'context' | 'js'
+  source?: 'context' | 'js' | 'icon' | 'css'
   completionSource?: string
   completionData?: unknown
 }
@@ -55,6 +56,7 @@ type CustomSuggestionState = {
   left: number
   replaceRange: { startColumn: number; endColumn: number } | null
   signatureOnly?: boolean
+  mode?: 'default' | 'icon'
 }
 
 const completionStores: Record<string, CompletionStore> = {}
@@ -645,6 +647,7 @@ interface CodeEditorProps {
   id: string
   language:
     | 'pgsql'
+    | 'css'
     | 'json'
     | 'html'
     | 'typescript'
@@ -676,12 +679,16 @@ interface CodeEditorProps {
   completionMetadata?: CompletionMetadataMap
   customSuggestions?: {
     enabled: boolean
+    triggerMode?: 'fx' | 'prefix' | 'css'
     context?: Record<string, unknown>
+    iconOptions?: { label: string; value: string }[]
+    renderIcon?: (value: string) => ReactNode
   }
   extraLibs?: string[]
   editorRef?: MutableRefObject<editor.IStandaloneCodeEditor | undefined>
   onInputChange?: (value?: string) => void
   onContentSizeChange?: (metrics: CodeEditorContentSize) => void
+  onMarkersChange?: (markers: editor.IMarker[]) => void
 }
 
 const CodeEditor = ({
@@ -708,6 +715,7 @@ const CodeEditor = ({
   editorRef: editorRefProps,
   onInputChange = noop,
   onContentSizeChange,
+  onMarkersChange,
 }: CodeEditorProps) => {
   const monaco = useMonaco()
   const { data: project } = useSelectedProjectQuery()
@@ -718,6 +726,7 @@ const CodeEditor = ({
   const monacoRef = useRef<Monaco>()
   const extraLibsRef = useRef<IDisposable[]>([])
   const onContentSizeChangeRef = useRef(onContentSizeChange)
+  const onMarkersChangeRef = useRef(onMarkersChange)
   const autoTriggerSuggestionsRef = useRef(autoTriggerSuggestions)
   const contentSizeDisposableRef = useRef<IDisposable | null>(null)
   const layoutDisposableRef = useRef<IDisposable | null>(null)
@@ -732,6 +741,7 @@ const CodeEditor = ({
     left: 0,
     replaceRange: null,
     signatureOnly: false,
+    mode: 'default',
   })
   const [customSuggestDetails, setCustomSuggestDetails] = useState<
     Record<string, { detail?: string; documentation?: string }>
@@ -1166,14 +1176,343 @@ const CodeEditor = ({
     const openIndex = before.lastIndexOf('{{')
     const closeIndex = before.lastIndexOf('}}')
     const insideExpression = openIndex !== -1 && openIndex > closeIndex
+    const triggerMode = currentCustom?.triggerMode ?? 'fx'
+
+    if (triggerMode === 'prefix') {
+      const prefixMatch = before.match(/--[A-Za-z_][\w-]*$/)
+      let prefix = prefixMatch ? prefixMatch[0] : ''
+      if (!prefix && before.endsWith('--')) {
+        prefix = '--'
+      }
+      if (!prefix) {
+        closeCustomSuggest()
+        return
+      }
+      const words = completionWords ?? []
+      const metadata = completionMetadata ?? {}
+      const lowerPrefix = prefix.toLowerCase()
+      const items = words
+        .filter((word) => word.toLowerCase().startsWith(lowerPrefix))
+        .map((word) => {
+          const meta = metadata[word]
+          return {
+            label: word,
+            insertText: word,
+            kind: meta?.kind ?? 'var',
+            detail: meta?.detail,
+            documentation: meta?.documentation,
+            fullPath: word,
+            source: 'context',
+          }
+        })
+        .sort((a, b) => a.label.localeCompare(b.label))
+
+      if (items.length === 0) {
+        closeCustomSuggest()
+        return
+      }
+
+      const visiblePosition = editor.getScrolledVisiblePosition(position)
+      const editorNode = editor.getDomNode()
+      if (!visiblePosition || !editorNode) {
+        closeCustomSuggest()
+        return
+      }
+      const rect = editorNode.getBoundingClientRect()
+      const left = getSuggestionLeft(rect, visiblePosition.left, false)
+      const top = rect.top + visiblePosition.top + visiblePosition.height + 6
+      const endColumn = position.column
+      const startColumn = Math.max(1, endColumn - prefix.length)
+      setCustomSuggestState({
+        open: true,
+        items,
+        activeIndex: 0,
+        top,
+        left,
+        replaceRange: {
+          startColumn,
+          endColumn,
+        },
+        signatureOnly: false,
+        mode: 'default',
+      })
+      return
+    }
+
+    if (triggerMode === 'css') {
+      const wordUntil = model.getWordUntilPosition(position)
+      const lineBefore = model
+        .getLineContent(position.lineNumber)
+        .slice(0, Math.max(0, position.column - 1))
+      const varPrefixMatch = lineBefore.match(/--[A-Za-z_][\w-]*$/)
+      const varPrefix = varPrefixMatch
+        ? varPrefixMatch[0]
+        : lineBefore.endsWith('--')
+          ? '--'
+          : ''
+      const propPrefixMatch = lineBefore.match(/[A-Za-z0-9-]+$/)
+      const propPrefix = propPrefixMatch ? propPrefixMatch[0] : ''
+      const activePrefix = varPrefix || propPrefix || wordUntil.word || ''
+      if (!activePrefix) {
+        closeCustomSuggest()
+        return
+      }
+      const words = completionWords ?? []
+      const metadata = completionMetadata ?? {}
+      const basePrefix = varPrefix ? varPrefix.toLowerCase() : ''
+      const baseItems = basePrefix
+        ? words
+            .filter((word) => word.toLowerCase().startsWith(basePrefix))
+            .map((word) => {
+              const meta = metadata[word]
+              return {
+                label: word,
+                insertText: word,
+                kind: meta?.kind ?? 'var',
+                detail: meta?.detail,
+                documentation: meta?.documentation,
+                fullPath: word,
+                source: 'context' as const,
+              }
+            })
+        : []
+
+      const textBefore = model.getValueInRange({
+        startLineNumber: 1,
+        startColumn: 1,
+        endLineNumber: position.lineNumber,
+        endColumn: position.column,
+      })
+      const openBraces = (textBefore.match(/{/g) ?? []).length
+      const closeBraces = (textBefore.match(/}/g) ?? []).length
+      const insideBlock = openBraces > closeBraces
+      const lastDelimiter = Math.max(textBefore.lastIndexOf('{'), textBefore.lastIndexOf(';'))
+      const afterDelimiter = lastDelimiter >= 0 ? textBefore.slice(lastDelimiter + 1) : textBefore
+      const inValueContext = insideBlock && afterDelimiter.includes(':')
+      const lowerPropPrefix = propPrefix.toLowerCase()
+      const propertyItems =
+        insideBlock && !inValueContext && lowerPropPrefix
+          ? CSS_PROPERTY_SUGGESTIONS.filter((prop) => prop.startsWith(lowerPropPrefix)).map(
+              (prop) => ({
+                label: prop,
+                insertText: prop,
+                kind: 'property',
+                detail: 'property',
+                fullPath: prop,
+                source: 'css' as const,
+              })
+            )
+          : []
+
+      const mergedFallback = new Map<string, CustomSuggestionItem>()
+      baseItems.forEach((item) => mergedFallback.set(item.label, item))
+      propertyItems.forEach((item) => {
+        if (!mergedFallback.has(item.label)) {
+          mergedFallback.set(item.label, item)
+        }
+      })
+      const fallbackItems = Array.from(mergedFallback.values())
+      const startColumn = Math.max(1, position.column - activePrefix.length)
+      const endColumn = position.column
+
+      if (!currentMonaco?.languages?.css?.getCSSWorker) {
+        if (fallbackItems.length === 0) {
+          closeCustomSuggest()
+          return
+        }
+        const visiblePosition = editor.getScrolledVisiblePosition(position)
+        const editorNode = editor.getDomNode()
+        if (!visiblePosition || !editorNode) {
+          closeCustomSuggest()
+          return
+        }
+        const rect = editorNode.getBoundingClientRect()
+        const left = getSuggestionLeft(rect, visiblePosition.left, false)
+        const top = rect.top + visiblePosition.top + visiblePosition.height + 6
+        setCustomSuggestState({
+          open: true,
+          items: fallbackItems,
+          activeIndex: 0,
+          top,
+          left,
+          replaceRange: {
+            startColumn,
+            endColumn,
+          },
+          signatureOnly: false,
+          mode: 'default',
+        })
+        return
+      }
+
+      const visiblePosition = editor.getScrolledVisiblePosition(position)
+      const editorNode = editor.getDomNode()
+      if (!visiblePosition || !editorNode) {
+        closeCustomSuggest()
+        return
+      }
+      const rect = editorNode.getBoundingClientRect()
+      const left = getSuggestionLeft(rect, visiblePosition.left, false)
+      const top = rect.top + visiblePosition.top + visiblePosition.height + 6
+
+      const requestId = (customSuggestRequestRef.current += 1)
+
+      if (fallbackItems.length > 0) {
+        setCustomSuggestState({
+          open: true,
+          items: fallbackItems,
+          activeIndex: 0,
+          top,
+          left,
+          replaceRange: {
+            startColumn,
+            endColumn,
+          },
+          signatureOnly: false,
+          mode: 'default',
+        })
+      }
+
+      void (async () => {
+        try {
+          const workerFactory = await currentMonaco.languages.css.getCSSWorker()
+          const worker = await workerFactory(model.uri)
+          const cssList = await worker.doComplete(model.uri.toString(), {
+            line: position.lineNumber - 1,
+            character: position.column - 1,
+          })
+          if (requestId !== customSuggestRequestRef.current) {
+            return
+          }
+          const cssItems = (cssList?.items ?? []).map((item) => {
+            const insertText =
+              (typeof item.insertText === 'string' && item.insertText) ||
+              (item.textEdit && 'newText' in item.textEdit ? (item.textEdit as { newText?: string }).newText : '') ||
+              item.label
+            const documentation =
+              typeof item.documentation === 'string'
+                ? item.documentation
+                : (item.documentation as { value?: string } | undefined)?.value
+            const detail = item.detail ?? item.label
+            return {
+              label: item.label,
+              insertText: insertText || item.label,
+              kind: detail,
+              detail,
+              documentation,
+              fullPath: item.label,
+              source: 'css' as const,
+            }
+          })
+
+          const mergedMap = new Map<string, CustomSuggestionItem>()
+          fallbackItems.forEach((item) => mergedMap.set(item.label, item))
+          cssItems.forEach((item) => {
+            if (!mergedMap.has(item.label)) {
+              mergedMap.set(item.label, item)
+            }
+          })
+          const items = Array.from(mergedMap.values())
+          if (items.length === 0) {
+            closeCustomSuggest()
+            return
+          }
+          setCustomSuggestState({
+            open: true,
+            items,
+            activeIndex: 0,
+            top,
+            left,
+            replaceRange: {
+              startColumn,
+              endColumn,
+            },
+            signatureOnly: false,
+            mode: 'default',
+          })
+        } catch {
+          if (requestId !== customSuggestRequestRef.current) {
+            return
+          }
+          if (fallbackItems.length > 0) {
+            setCustomSuggestState({
+              open: true,
+              items: fallbackItems,
+              activeIndex: 0,
+              top,
+              left,
+              replaceRange: {
+                startColumn,
+                endColumn,
+              },
+              signatureOnly: false,
+              mode: 'default',
+            })
+            return
+          }
+          closeCustomSuggest()
+        }
+      })()
+      return
+    }
+
     if (!insideExpression) {
       closeCustomSuggest()
       return
     }
 
+    const iconOptions = currentCustom?.iconOptions ?? []
     const words = completionWords ?? []
     const metadata = completionMetadata ?? {}
     const expressionBefore = before.slice(openIndex + 2)
+    const iconCommandMatch = expressionBefore.match(/(?:^|\s)\/icon(?:\s+([\w-]*))?$/i)
+    if (iconOptions.length && iconCommandMatch) {
+      const query = (iconCommandMatch[1] ?? '').trim().toLowerCase()
+      const filteredIcons = iconOptions.filter((option) => {
+        if (!query) {
+          return true
+        }
+        const label = option.label.toLowerCase()
+        const value = option.value.toLowerCase()
+        return label.includes(query) || value.includes(query)
+      })
+      const visiblePosition = editor.getScrolledVisiblePosition(position)
+      const editorNode = editor.getDomNode()
+      if (!visiblePosition || !editorNode) {
+        closeCustomSuggest()
+        return
+      }
+      const rect = editorNode.getBoundingClientRect()
+      const left = getSuggestionLeft(rect, visiblePosition.left, false)
+      const top = rect.top + visiblePosition.top + visiblePosition.height + 6
+      const commandStartIndex = before.toLowerCase().lastIndexOf('/icon')
+      const startColumn = commandStartIndex >= 0 ? commandStartIndex + 1 : position.column
+      const endColumn = position.column
+      const items = filteredIcons.map((option) => ({
+        label: option.label,
+        insertText: JSON.stringify(option.value),
+        kind: 'icon',
+        detail: option.value,
+        documentation: '',
+        fullPath: option.value,
+        source: 'icon',
+        completionData: option.value,
+      }))
+      setCustomSuggestState({
+        open: true,
+        items,
+        activeIndex: 0,
+        top,
+        left,
+        replaceRange: {
+          startColumn,
+          endColumn,
+        },
+        signatureOnly: false,
+        mode: 'icon',
+      })
+      return
+    }
     const emptyCallPath = getEmptyCallPath(expressionBefore)
     if (emptyCallPath) {
       const wordUntil = model.getWordUntilPosition(position)
@@ -1207,6 +1546,7 @@ const CodeEditor = ({
           endColumn: wordUntil.endColumn,
         },
         signatureOnly: true,
+        mode: 'default',
       })
       const applySignatureDoc = () => {
         const signatureDoc = resolveFunctionDocForCall(
@@ -1404,6 +1744,7 @@ const CodeEditor = ({
         endColumn: wordUntil.endColumn,
       },
       signatureOnly: false,
+      mode: 'default',
     }
 
     if (items.length > 0) {
@@ -1733,6 +2074,10 @@ const CodeEditor = ({
   }, [onContentSizeChange])
 
   useEffect(() => {
+    onMarkersChangeRef.current = onMarkersChange
+  }, [onMarkersChange])
+
+  useEffect(() => {
     customSuggestionsRef.current = customSuggestions
   }, [customSuggestions])
 
@@ -1749,6 +2094,35 @@ const CodeEditor = ({
   }, [customSuggestState])
 
   useEffect(() => {
+    const currentMonaco = monacoRef.current
+    const editorInstance = editorRef.current
+    if (!currentMonaco || !editorInstance || !editorReady) {
+      return
+    }
+    if (!onMarkersChangeRef.current) {
+      return
+    }
+    const model = editorInstance.getModel()
+    if (!model) {
+      return
+    }
+    const resource = model.uri
+    const emit = () => {
+      const markers = currentMonaco.editor.getModelMarkers({ resource })
+      onMarkersChangeRef.current?.(markers)
+    }
+    emit()
+    const disposable = currentMonaco.editor.onDidChangeMarkers((resources) => {
+      if (resources.some((uri) => uri.toString() === resource.toString())) {
+        emit()
+      }
+    })
+    return () => {
+      disposable.dispose()
+    }
+  }, [editorReady, onMarkersChange])
+
+  useEffect(() => {
     const editorInstance = editorRef.current
     if (!editorInstance || !editorReady) {
       return
@@ -1763,6 +2137,41 @@ const CodeEditor = ({
     if (fxPlainDecorationsRef.current) {
       fxPlainDecorationsRef.current.clear()
       fxPlainDecorationsRef.current = null
+    }
+  }, [editorReady, highlightOnlyFx, value])
+
+  useEffect(() => {
+    if (!highlightOnlyFx) {
+      return
+    }
+    const text = typeof value === 'string' ? value : String(value ?? '')
+    const shouldSuppressMarkers = !text.includes('{{')
+    if (!shouldSuppressMarkers) {
+      return
+    }
+    const currentMonaco = monacoRef.current
+    const editorInstance = editorRef.current
+    if (!currentMonaco || !editorInstance || !editorReady) {
+      return
+    }
+    const model = editorInstance.getModel()
+    if (!model) {
+      return
+    }
+
+    const clearMarkers = () => {
+      currentMonaco.editor.setModelMarkers(model, 'typescript', [])
+      currentMonaco.editor.setModelMarkers(model, 'javascript', [])
+    }
+
+    clearMarkers()
+    const disposable = currentMonaco.editor.onDidChangeMarkers((resources) => {
+      if (resources.some((uri) => uri.toString() === model.uri.toString())) {
+        clearMarkers()
+      }
+    })
+    return () => {
+      disposable.dispose()
     }
   }, [editorReady, highlightOnlyFx, value])
 
@@ -2058,6 +2467,7 @@ const CodeEditor = ({
     activePreviewValue && typeof activePreviewValue === 'object' && !Array.isArray(activePreviewValue)
       ? Object.entries(activePreviewValue as Record<string, unknown>).slice(0, 6)
       : []
+  const isIconSuggest = customSuggestState.mode === 'icon'
 
   useEffect(() => {
     extraLibsRef.current.forEach((lib) => lib.dispose())
@@ -2082,6 +2492,60 @@ const CodeEditor = ({
       extraLibsRef.current = []
     }
   }, [monaco, extraLibs, id, language])
+
+  useEffect(() => {
+    if (!monaco || language !== 'css') {
+      return
+    }
+    let cancelled = false
+    const ensureCssLanguage = async () => {
+      if (typeof window !== 'undefined') {
+        const requireFn = (window as any).require
+        if (typeof requireFn === 'function') {
+          await new Promise<void>((resolve) => {
+            requireFn(['vs/language/css/cssMode'], () => resolve(), () => resolve())
+          })
+        }
+      }
+
+      if (cancelled) {
+        return
+      }
+
+      const cssDefaults = monaco.languages?.css?.cssDefaults
+      if (!cssDefaults) {
+        return
+      }
+      cssDefaults.setOptions({
+        validate: true,
+        lint: {
+          compatibleVendorPrefixes: 'warning',
+          vendorPrefix: 'warning',
+          duplicateProperties: 'warning',
+          emptyRules: 'warning',
+          importStatement: 'warning',
+          boxModel: 'warning',
+          universalSelector: 'warning',
+          zeroUnits: 'warning',
+          fontFaceProperties: 'warning',
+          hexColorLength: 'warning',
+          argumentsInColorFunction: 'warning',
+          unknownProperties: 'warning',
+          ieHack: 'warning',
+          unknownVendorSpecificProperties: 'warning',
+          propertyIgnoredDueToDisplay: 'warning',
+          important: 'warning',
+          float: 'warning',
+          idSelector: 'warning',
+        },
+      })
+    }
+
+    void ensureCssLanguage()
+    return () => {
+      cancelled = true
+    }
+  }, [monaco, language])
 
   useEffect(() => {
     if (monaco && project && formatDocument.enabled) {
@@ -2270,8 +2734,16 @@ const CodeEditor = ({
     }
   }, [])
 
+  const suppressSuggestWidget = Boolean(customSuggestions?.enabled)
+
   return (
-    <div className={cn('relative h-full w-full', className)}>
+    <div
+      className={cn(
+        'relative h-full w-full',
+        suppressSuggestWidget && 'monaco-no-suggest',
+        className
+      )}
+    >
       <Editor
         path={id}
         theme="supabase"
@@ -2290,91 +2762,154 @@ const CodeEditor = ({
           style={{ top: customSuggestState.top, left: customSuggestState.left }}
           onMouseDown={(event) => event.preventDefault()}
         >
-          <div className="w-[220px] rounded-lg border border-foreground-muted/30 bg-surface-100 p-2 text-xs shadow-lg">
-            {activeSuggestion && (
-              <div className="space-y-2">
-                <div className="text-[11px] font-semibold text-foreground">
-                  {activeSuggestion.fullPath}
-                </div>
-                {activePreviewEntries.length > 0 ? (
-                  <div className="space-y-1 font-mono">
-                    {activePreviewEntries.map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between gap-2">
-                        <span className="text-foreground">{key}</span>
-                        <span className="text-foreground-muted">
-                          {formatInlinePreview(value)}
-                        </span>
-                      </div>
-                    ))}
+          {!isIconSuggest && (
+            <div className="w-[220px] rounded-lg border border-foreground-muted/30 bg-surface-100 p-2 text-xs shadow-lg">
+              {activeSuggestion && (
+                <div className="space-y-2">
+                  <div className="text-[11px] font-semibold text-foreground">
+                    {activeSuggestion.fullPath}
                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="font-mono text-foreground-muted">
-                      {activeSuggestionDetails?.detail ??
-                        activeSuggestion.detail ??
-                        formatInlinePreview(activePreviewValue) ??
-                        ''}
+                  {activePreviewEntries.length > 0 ? (
+                    <div className="space-y-1 font-mono">
+                      {activePreviewEntries.map(([key, value]) => (
+                        <div key={key} className="flex items-center justify-between gap-2">
+                          <span className="text-foreground">{key}</span>
+                          <span className="text-foreground-muted">
+                            {formatInlinePreview(value)}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                    {activeSuggestionDetails?.documentation ? (
-                      <div className="text-foreground-muted">
-                        {activeSuggestionDetails.documentation}
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="font-mono text-foreground-muted">
+                        {activeSuggestionDetails?.detail ??
+                          activeSuggestion.detail ??
+                          formatInlinePreview(activePreviewValue) ??
+                          ''}
                       </div>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                      {activeSuggestionDetails?.documentation ? (
+                        <div className="text-foreground-muted">
+                          {activeSuggestionDetails.documentation}
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {!customSuggestState.signatureOnly && (
             <div
               ref={customSuggestListRef}
-              className="w-[220px] max-h-64 overflow-y-auto rounded-lg border border-foreground-muted/30 bg-surface-100 py-1 text-xs shadow-lg"
+              className={
+                isIconSuggest
+                  ? 'w-[320px] max-h-64 overflow-y-auto rounded-lg border border-foreground-muted/30 bg-surface-100 p-2 text-xs shadow-lg'
+                  : 'w-[220px] max-h-64 overflow-y-auto rounded-lg border border-foreground-muted/30 bg-surface-100 py-1 text-xs shadow-lg'
+              }
             >
-              {customSuggestState.items.map((item, index) => {
-                const isActive = index === customSuggestState.activeIndex
-                return (
-                  <button
-                    key={`${item.fullPath}-${index}`}
-                    type="button"
-                    data-suggest-index={index}
-                    className={cn(
-                      'flex w-full items-center justify-between gap-2 px-2 py-1 text-left font-mono',
-                      isActive ? 'bg-brand-500 text-white' : 'text-foreground'
-                    )}
-                    onMouseEnter={() =>
-                      setCustomSuggestState((prev) => ({ ...prev, activeIndex: index }))
-                    }
-                    onClick={() => {
-                      const editor = editorRef.current
-                      if (!editor) {
-                        return
+              {isIconSuggest ? (
+                <div className="grid grid-cols-8 gap-2">
+                  {customSuggestState.items.length === 0 ? (
+                    <div className="col-span-full px-2 py-2 text-foreground-muted">
+                      No icons found
+                    </div>
+                  ) : (
+                    customSuggestState.items.map((item, index) => {
+                      const isActive = index === customSuggestState.activeIndex
+                      const iconValue = String(item.completionData ?? item.fullPath)
+                      const iconNode = customSuggestions?.renderIcon?.(iconValue)
+                      return (
+                        <button
+                          key={`${item.fullPath}-${index}`}
+                          type="button"
+                          data-suggest-index={index}
+                          className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-foreground hover:bg-surface-200',
+                            isActive ? 'bg-brand-500 text-white' : ''
+                          )}
+                          title={item.label}
+                          onMouseEnter={() =>
+                            setCustomSuggestState((prev) => ({ ...prev, activeIndex: index }))
+                          }
+                          onClick={() => {
+                            const editor = editorRef.current
+                            if (!editor) {
+                              return
+                            }
+                            const position = editor.getPosition()
+                            const startColumn =
+                              customSuggestState.replaceRange?.startColumn ?? position?.column ?? 1
+                            const endColumn =
+                              customSuggestState.replaceRange?.endColumn ?? position?.column ?? startColumn
+                            const lineNumber = position?.lineNumber ?? 1
+                            editor.setSelection({
+                              startLineNumber: lineNumber,
+                              startColumn,
+                              endLineNumber: lineNumber,
+                              endColumn,
+                            })
+                            editor.trigger('keyboard', 'type', { text: item.insertText })
+                            closeCustomSuggest()
+                          }}
+                        >
+                          {iconNode ?? (
+                            <span className="text-[10px] font-semibold">
+                              {item.label.slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              ) : (
+                customSuggestState.items.map((item, index) => {
+                  const isActive = index === customSuggestState.activeIndex
+                  return (
+                    <button
+                      key={`${item.fullPath}-${index}`}
+                      type="button"
+                      data-suggest-index={index}
+                      className={cn(
+                        'flex w-full items-center justify-between gap-2 px-2 py-1 text-left font-mono',
+                        isActive ? 'bg-brand-500 text-white' : 'text-foreground'
+                      )}
+                      onMouseEnter={() =>
+                        setCustomSuggestState((prev) => ({ ...prev, activeIndex: index }))
                       }
-                      const position = editor.getPosition()
-                      const startColumn =
-                        customSuggestState.replaceRange?.startColumn ?? position?.column ?? 1
-                      const endColumn =
-                        customSuggestState.replaceRange?.endColumn ?? position?.column ?? startColumn
-                      const lineNumber = position?.lineNumber ?? 1
-                      editor.setSelection({
-                        startLineNumber: lineNumber,
-                        startColumn,
-                        endLineNumber: lineNumber,
-                        endColumn,
-                      })
-                      editor.trigger('keyboard', 'type', { text: item.insertText })
-                      closeCustomSuggest()
-                      if (item.appendDot || item.insertText.endsWith('.')) {
-                        setTimeout(() => updateCustomSuggestions(editor), 0)
-                      }
-                    }}
-                  >
-                    <span className="truncate">{item.label}</span>
-                    <span className="text-[10px] uppercase opacity-70">
-                      {(item.kind ?? 'object').replace('undefined', 'void')}
-                    </span>
-                  </button>
-                )
-              })}
+                      onClick={() => {
+                        const editor = editorRef.current
+                        if (!editor) {
+                          return
+                        }
+                        const position = editor.getPosition()
+                        const startColumn =
+                          customSuggestState.replaceRange?.startColumn ?? position?.column ?? 1
+                        const endColumn =
+                          customSuggestState.replaceRange?.endColumn ?? position?.column ?? startColumn
+                        const lineNumber = position?.lineNumber ?? 1
+                        editor.setSelection({
+                          startLineNumber: lineNumber,
+                          startColumn,
+                          endLineNumber: lineNumber,
+                          endColumn,
+                        })
+                        editor.trigger('keyboard', 'type', { text: item.insertText })
+                        closeCustomSuggest()
+                        if (item.appendDot || item.insertText.endsWith('.')) {
+                          setTimeout(() => updateCustomSuggestions(editor), 0)
+                        }
+                      }}
+                    >
+                      <span className="truncate">{item.label}</span>
+                      <span className="text-[10px] uppercase opacity-70">
+                        {(item.kind ?? 'object').replace('undefined', 'void')}
+                      </span>
+                    </button>
+                  )
+                })
+              )}
             </div>
           )}
         </div>

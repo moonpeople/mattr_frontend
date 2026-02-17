@@ -96,7 +96,7 @@ export const useCreateBuilderJsMutation = ({
   const queryClient = useQueryClient()
 
   return useMutation<BuilderJsFunction, ResponseError, BuilderJsCreateVariables>({
-    mutationFn: ({ appId, name, code }) => {
+    mutationFn: async ({ appId, name, code }) => {
       const draft = queryClient.getQueryData(builderKeys.draft(appId)) as
         | { schema?: BuilderDraftSchema; id?: string; appId?: string; updatedAt?: string; updatedBy?: string | null }
         | undefined
@@ -130,7 +130,7 @@ export const useUpdateBuilderJsMutation = ({
   const queryClient = useQueryClient()
 
   return useMutation<BuilderJsFunction, ResponseError, BuilderJsUpdateVariables>({
-    mutationFn: ({ appId, jsId, name, code }) => {
+    mutationFn: async ({ appId, jsId, name, code }) => {
       const draft = queryClient.getQueryData(builderKeys.draft(appId)) as
         | { schema?: BuilderDraftSchema; id?: string; appId?: string; updatedAt?: string; updatedBy?: string | null }
         | undefined
@@ -169,7 +169,7 @@ export const useDeleteBuilderJsMutation = ({
   const queryClient = useQueryClient()
 
   return useMutation<null, ResponseError, { jsId: string; appId: string }>({
-    mutationFn: ({ jsId, appId }) => {
+    mutationFn: async ({ jsId, appId }) => {
       const draft = queryClient.getQueryData(builderKeys.draft(appId)) as
         | { schema?: BuilderDraftSchema; id?: string; appId?: string; updatedAt?: string; updatedBy?: string | null }
         | undefined

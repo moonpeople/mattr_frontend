@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import RGL, { WidthProvider, type Layout } from 'react-grid-layout'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import { PermissionAction } from '@supabase/shared-types/out/constants'
 import { toast } from 'sonner'
 
-import { getWidgetDefinition } from 'widgets'
+import {
+  buildSidebarThemeVars,
+  getWidgetDefinition,
+  resolveSidebarPanelConfig,
+} from 'widgets/runtime'
 import {
   Badge,
   Button,
@@ -38,27 +41,80 @@ import { evaluateCondition } from 'lib/builder/expressions'
 import { resolveValue } from 'lib/builder/value-resolver'
 import { runBuilderQuery } from 'lib/builder/query-runner'
 import type {
+  BuilderAppMeta,
+  BuilderWidgetSpacing,
   BuilderMenuItem,
   BuilderPage,
   BuilderQueryRunResult,
   BuilderWidgetInstance,
 } from './types'
 import {
+  getPageFrameWidgets,
   resolvePagePaddingValue,
   resolveSpacingPadding,
   resolveWidgetSpacingModes,
 } from './types'
 import { isPlainObject, stripTransformerMeta } from './BuilderCodeUtils'
+import { resolveWidgetStyleScopeVars } from './widgetStyleOverrides'
+import { renderWidgetTree } from './runtime/renderWidgetTree'
+import { flattenWidgets, isWidgetVisible, parseBoolean } from './runtime/utils'
 
 // Предпросмотр: рендер страниц с политиками, данными и запуском запросов.
 
-const ReactGridLayout = WidthProvider(RGL)
+const toKebabCase = (value: string) =>
+  value.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)
+
+const serializeThemeStyle = (style?: CSSProperties) => {
+  if (!style) {
+    return ''
+  }
+  return Object.entries(style)
+    .map(([key, value]) => {
+      if (value === undefined || value === null || value === '') {
+        return ''
+      }
+      const cssKey = key.startsWith('--') ? key : toKebabCase(key)
+      return `${cssKey}: ${String(value)};`
+    })
+    .filter(Boolean)
+    .join(' ')
+}
+
+type GlobalFramePadding = 'sm' | 'md' | 'lg'
+type GlobalFrameBackground = 'surface' | 'muted' | 'transparent'
+
+const resolveGlobalFrameVisualConfig = (
+  raw: Record<string, unknown> | undefined
+): { padding: GlobalFramePadding; bordered: boolean; background: GlobalFrameBackground } => {
+  const paddingRaw = typeof raw?.padding === 'string' ? raw.padding.trim().toLowerCase() : 'md'
+  const padding: GlobalFramePadding =
+    paddingRaw === 'sm' || paddingRaw === 'lg' ? paddingRaw : 'md'
+  const backgroundRaw =
+    typeof raw?.background === 'string' ? raw.background.trim().toLowerCase() : 'surface'
+  const background: GlobalFrameBackground =
+    backgroundRaw === 'muted' || backgroundRaw === 'transparent' ? backgroundRaw : 'surface'
+  const bordered = parseBoolean(raw?.bordered, true)
+  return { padding, bordered, background }
+}
+
+const getGlobalFramePaddingClass = (padding: GlobalFramePadding) =>
+  padding === 'sm' ? 'p-3' : padding === 'lg' ? 'p-6' : 'p-4'
+
+const getGlobalFrameBackgroundClass = (background: GlobalFrameBackground) =>
+  background === 'muted'
+    ? 'bg-muted'
+    : background === 'transparent'
+      ? 'bg-transparent'
+      : 'bg-background'
 
 interface BuilderPreviewProps {
   pages: BuilderPage[]
   activePageId: string | null
   onSelectPage: (pageId: string) => void
-  globalWidgets?: BuilderWidgetInstance[]
+  appMeta?: BuilderAppMeta
+  themeStyle?: CSSProperties
+  themeCustomCss?: string
+  appFrameWidgets?: BuilderWidgetInstance[]
   policies?: Record<string, boolean>
   queryRun?: BuilderQueryRunResult
   onClearQueryRun?: () => void
@@ -69,13 +125,18 @@ interface BuilderPreviewProps {
   projectRestUrl?: string | null
   gridRowHeight: number
   gridMargin: number
+  iconLibrary?: string
+  variant?: 'debug' | 'app'
 }
 
 export const BuilderPreview = ({
   pages,
   activePageId,
   onSelectPage,
-  globalWidgets = [],
+  appMeta,
+  themeStyle,
+  themeCustomCss,
+  appFrameWidgets = [],
   policies,
   queryRun,
   onClearQueryRun,
@@ -86,7 +147,11 @@ export const BuilderPreview = ({
   projectRestUrl,
   gridRowHeight,
   gridMargin,
+  iconLibrary,
+  variant = 'debug',
 }: BuilderPreviewProps) => {
+  const isAppVariant = variant === 'app'
+  const themeCssText = useMemo(() => serializeThemeStyle(themeStyle), [themeStyle])
   const hasExternalPolicies = typeof policies !== 'undefined'
   const { data: policyKeys = [] } = useBuilderPoliciesQuery({
     enabled: !hasExternalPolicies,
@@ -151,14 +216,25 @@ export const BuilderPreview = ({
     return filterMenuItems(activePage.menu.items, activePolicies)
   }, [activePage?.menu?.items, activePolicies])
 
-  const pageGlobals = activePage?.pageGlobals ?? []
+  const pageFrameWidgets = useMemo(
+    () => (activePage ? getPageFrameWidgets(activePage.pageLayout.frames) : []),
+    [activePage]
+  )
+  const activePageWidgets = useMemo(
+    () => activePage?.pageLayout.widgets ?? [],
+    [activePage]
+  )
+  const activePageMain = useMemo(
+    () => activePage?.pageLayout.main,
+    [activePage]
+  )
   const flattenedGlobalWidgets = useMemo(
-    () => flattenWidgets([...globalWidgets, ...pageGlobals]),
-    [globalWidgets, pageGlobals]
+    () => flattenWidgets([...appFrameWidgets, ...pageFrameWidgets]),
+    [appFrameWidgets, pageFrameWidgets]
   )
   const flattenedActiveWidgets = useMemo(
-    () => (activePage ? flattenWidgets(activePage.widgets) : []),
-    [activePage]
+    () => flattenWidgets(activePageWidgets),
+    [activePageWidgets]
   )
   const widgetLookup = useMemo(() => {
     const map = new Map<string, BuilderWidgetInstance>()
@@ -166,7 +242,8 @@ export const BuilderPreview = ({
       map.set(widget.id, widget)
     })
     pages.forEach((page) => {
-      flattenWidgets(page.widgets).forEach((widget) => {
+      const pageWidgets = page.pageLayout.widgets
+      flattenWidgets(pageWidgets).forEach((widget) => {
         map.set(widget.id, widget)
       })
     })
@@ -176,61 +253,123 @@ export const BuilderPreview = ({
   const widgetValueMap = useMemo(() => {
     const map: Record<string, Record<string, unknown>> = {}
     flattenedGlobalWidgets.forEach((widget) => {
-      map[widget.id] = {
+      const definition = getWidgetDefinition(widget.type)
+      const defaultProps = definition?.defaultProps ?? {}
+      const entry: Record<string, unknown> = {
+        id: widget.id,
+        type: widget.type,
+        ...defaultProps,
         ...(widget.props ?? {}),
         ...(widgetState[widget.id] ?? {}),
       }
+      const supportsFormDataKey =
+        Object.prototype.hasOwnProperty.call(defaultProps, 'formDataKey') ||
+        Object.prototype.hasOwnProperty.call(entry, 'formDataKey')
+      if (supportsFormDataKey) {
+        const rawFormDataKey = entry.formDataKey
+        if (typeof rawFormDataKey === 'string') {
+          if (/^\\{\\{\\s*self\\.id\\s*\\}\\}$/.test(rawFormDataKey.trim())) {
+            entry.formDataKey = widget.id
+          }
+        } else if (typeof rawFormDataKey === 'undefined') {
+          entry.formDataKey = widget.id
+        }
+      }
+      map[widget.id] = entry
     })
     pages.forEach((page) => {
-      flattenWidgets(page.widgets).forEach((widget) => {
-        map[widget.id] = {
+      const pageWidgets = page.pageLayout.widgets
+      flattenWidgets(pageWidgets).forEach((widget) => {
+        const definition = getWidgetDefinition(widget.type)
+        const defaultProps = definition?.defaultProps ?? {}
+        const entry: Record<string, unknown> = {
+          id: widget.id,
+          type: widget.type,
+          ...defaultProps,
           ...(widget.props ?? {}),
           ...(widgetState[widget.id] ?? {}),
         }
+        const supportsFormDataKey =
+          Object.prototype.hasOwnProperty.call(defaultProps, 'formDataKey') ||
+          Object.prototype.hasOwnProperty.call(entry, 'formDataKey')
+        if (supportsFormDataKey) {
+          const rawFormDataKey = entry.formDataKey
+          if (typeof rawFormDataKey === 'string') {
+            if (/^\\{\\{\\s*self\\.id\\s*\\}\\}$/.test(rawFormDataKey.trim())) {
+              entry.formDataKey = widget.id
+            }
+          } else if (typeof rawFormDataKey === 'undefined') {
+            entry.formDataKey = widget.id
+          }
+        }
+        map[widget.id] = entry
       })
     })
     return map
   }, [flattenedGlobalWidgets, pages, widgetState])
 
-  const runtimeContext = useMemo(
-    () => ({
+  const runtimeContext = useMemo(() => {
+    const pageNames = pages.map((page) => page.name || page.id)
+    const currentPage = activePage?.name ?? activePage?.id ?? pageNames[0] ?? ''
+    const appName = appMeta?.browserTitle ?? ''
+
+    return {
       widgets: widgetValueMap,
       state: appState,
       queries: queryResults,
       auth: authContext,
-    }),
-    [widgetValueMap, appState, queryResults, authContext]
-  )
+      retoolContext: {
+        appName,
+        currentPage,
+        environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? 'local',
+        inEditorMode: !isAppVariant,
+        pages: pageNames,
+        runningQueries: [],
+        translations: {},
+      },
+      ...widgetValueMap,
+      ...queryResults,
+    }
+  }, [
+    widgetValueMap,
+    appState,
+    queryResults,
+    authContext,
+    pages,
+    activePage?.name,
+    activePage?.id,
+    appMeta?.browserTitle,
+  ])
 
   const visibleGlobalWidgets = useMemo(
     () =>
-      globalWidgets.filter((widget) =>
+      appFrameWidgets.filter((widget) =>
         isWidgetVisible(widget, activePolicies, runtimeContext, widgetState, {
           includeHidden: parseBoolean(widget.props?.maintainSpaceWhenHidden),
         })
       ),
-    [globalWidgets, activePolicies, runtimeContext, widgetState]
+    [appFrameWidgets, activePolicies, runtimeContext, widgetState]
   )
-  const visiblePageGlobals = useMemo(
+  const visiblePageFrameWidgets = useMemo(
     () =>
-      pageGlobals.filter((widget) =>
+      pageFrameWidgets.filter((widget) =>
         isWidgetVisible(widget, activePolicies, runtimeContext, widgetState, {
           includeHidden: parseBoolean(widget.props?.maintainSpaceWhenHidden),
         })
       ),
-    [pageGlobals, activePolicies, runtimeContext, widgetState]
+    [pageFrameWidgets, activePolicies, runtimeContext, widgetState]
   )
 
   const visibleTopLevelWidgets = useMemo(() => {
-    if (!activePage) {
+    if (!activePageWidgets.length) {
       return []
     }
-    return activePage.widgets.filter((widget) =>
+    return activePageWidgets.filter((widget) =>
       isWidgetVisible(widget, activePolicies, runtimeContext, widgetState, {
         includeHidden: parseBoolean(widget.props?.maintainSpaceWhenHidden),
       })
     )
-  }, [activePage, activePolicies, runtimeContext, widgetState])
+  }, [activePageWidgets, activePolicies, runtimeContext, widgetState])
 
   const queryLookup = useMemo(() => {
     const map = new Map<string, BuilderQuery>()
@@ -831,136 +970,20 @@ export const BuilderPreview = ({
     }))
   }, [queryRun])
 
-  const renderPreviewWidgets = (
-    widgets: BuilderWidgetInstance[],
-    depth = 0
-  ): ReactNode[] => {
-    return widgets.flatMap((widget) => {
-      const definition = getWidgetDefinition(widget.type)
-      if (!definition) {
-        return [
-          <div
-            key={widget.id}
-            className="rounded-md border border-dashed border-foreground-muted/40 bg-surface-100 px-4 py-6 text-sm text-foreground-muted"
-          >
-            Unknown widget: {widget.type}
-          </div>,
-        ]
-      }
-
-      const rawProps = {
-        ...(widget.props ?? {}),
-        ...(widgetState[widget.id] ?? {}),
-      }
-      const resolvedProps = resolveValue(rawProps, runtimeContext)
-      const maintainSpaceWhenHidden = parseBoolean(
-        (resolvedProps as Record<string, unknown>)?.maintainSpaceWhenHidden ??
-          widget.props?.maintainSpaceWhenHidden
-      )
-      if (
-        !isWidgetVisible(widget, activePolicies, runtimeContext, widgetState, {
-          includeHidden: maintainSpaceWhenHidden,
-        })
-      ) {
-        return []
-      }
-      const disabledOverride = widgetState[widget.id]?.disabled
-      const isDisabled =
-        typeof disabledOverride === 'boolean'
-          ? disabledOverride
-          : evaluateCondition(widget.disabledWhen, activePolicies) === true
-      const spacing = resolveWidgetSpacingModes(widget.type, widget.spacing, (expression) =>
-        resolveValue(expression, runtimeContext)
-      )
-      const paddingValue = resolveSpacingPadding(spacing, (expression) =>
-        resolveValue(expression, runtimeContext)
-      )
-      const hiddenOverride = widgetState[widget.id]?.hidden
-      const baseHidden = parseBoolean(resolveValue(widget.hidden, runtimeContext), false)
-      const isHidden = parseBoolean(hiddenOverride, baseHidden)
-      const hiddenClass =
-        isHidden && maintainSpaceWhenHidden ? 'invisible pointer-events-none' : ''
-
-      const childContent =
-        widget.children && widget.children.length > 0 ? (
-          <div
-            className={
-              depth > 0
-                ? 'mt-3 rounded-md border border-dashed border-foreground-muted/40 p-3'
-                : 'mt-4 rounded-md border border-dashed border-foreground-muted/40 p-3'
-            }
-          >
-            {renderPreviewGrid(widget.children, depth + 1)}
-          </div>
-        ) : undefined
-
-      return [
-        <div
-          key={widget.id}
-          data-builder-preview-widget-id={widget.id}
-          style={{ padding: paddingValue }}
-          className={`rounded-md border border-foreground-muted/30 bg-surface-100 shadow-sm ${
-            isDisabled ? 'pointer-events-none opacity-60' : ''
-          } ${depth > 0 ? 'bg-surface-100/70' : ''} ${hiddenClass}`}
-        >
-          <div
-            className={
-              depth > 0
-                ? 'text-[10px] uppercase text-foreground-muted'
-                : 'text-xs uppercase text-foreground-muted'
-            }
-          >
-            {definition.label}
-          </div>
-          <div className={depth > 0 ? 'mt-2' : 'mt-3'}>
-            {definition.render(resolvedProps as any, {
-              mode: 'preview',
-              widgetId: widget.id,
-              state: widgetState[widget.id],
-              setState: (patch) => updateWidgetState(widget.id, patch),
-              runActions: (eventName, payload) => runWidgetActions(widget, eventName, payload),
-              children: childContent,
-            })}
-          </div>
-        </div>,
-      ]
+  const renderTree = (widgets: BuilderWidgetInstance[], depth = 0) =>
+    renderWidgetTree({
+      widgets,
+      depth,
+      gridRowHeight,
+      gridMargin,
+      activePolicies,
+      runtimeContext,
+      widgetState,
+      onUpdateState: updateWidgetState,
+      onRunActions: runWidgetActions,
+      chrome: !isAppVariant,
+      iconLibrary,
     })
-  }
-
-  const renderPreviewGrid = (
-    widgets: BuilderWidgetInstance[],
-    depth: number
-  ): ReactNode => {
-    const visibleWidgets = widgets.filter((widget) =>
-      isWidgetVisible(widget, activePolicies, runtimeContext, widgetState, {
-        includeHidden: parseBoolean(widget.props?.maintainSpaceWhenHidden),
-      })
-    )
-    if (visibleWidgets.length === 0) {
-      return null
-    }
-
-    const layout = visibleWidgets.map((widget, index) => normalizeLayout(widget, index))
-    const marginValue =
-      depth > 0 ? Math.max(4, Math.round(gridMargin / 2)) : gridMargin
-    const margin: [number, number] = [marginValue, marginValue]
-    const items = renderPreviewWidgets(visibleWidgets, depth)
-
-    return (
-      <ReactGridLayout
-        layout={layout}
-        cols={GRID_COLUMNS}
-        rowHeight={gridRowHeight}
-        margin={margin}
-        containerPadding={[0, 0]}
-        compactType={null}
-        isDraggable={false}
-        isResizable={false}
-      >
-        {items}
-      </ReactGridLayout>
-    )
-  }
 
   const renderGlobalWidget = (
     widget: BuilderWidgetInstance,
@@ -968,14 +991,250 @@ export const BuilderPreview = ({
   ): ReactNode => {
     const definition = getWidgetDefinition(widget.type)
     const hasChildren = Boolean(widget.children && widget.children.length > 0)
-    const childGrid = hasChildren ? renderPreviewGrid(widget.children ?? [], 1) : null
+    const childGrid = hasChildren ? renderTree(widget.children ?? [], 1) : null
     const fallbackMessage = hasChildren
       ? 'No components visible for the current policies.'
       : 'No components in this area yet.'
+    const resolvedFrameProps = resolveValue(widget.props ?? {}, runtimeContext)
+    const frameRawProps = (resolvedFrameProps && typeof resolvedFrameProps === 'object'
+      ? (resolvedFrameProps as Record<string, unknown>)
+      : undefined) as Record<string, unknown> | undefined
+    const frameVisual = resolveGlobalFrameVisualConfig(frameRawProps)
+    const frameStyleScopeVars = resolveWidgetStyleScopeVars(frameRawProps)
+    const frameSpacing = resolveWidgetSpacingModes(
+      widget.type,
+      widget.spacing as BuilderWidgetSpacing | null | undefined,
+      (expression) => resolveValue(expression, runtimeContext)
+    )
+    const frameMargin = resolveSpacingPadding(frameSpacing, (expression) =>
+      resolveValue(expression, runtimeContext)
+    )
+    const framePadding = resolveSpacingPadding(
+      frameSpacing,
+      (expression) => resolveValue(expression, runtimeContext),
+      'padding'
+    )
+    const frameHeaderPadding = resolveSpacingPadding(
+      frameSpacing,
+      (expression) => resolveValue(expression, runtimeContext),
+      'headerPadding'
+    )
+    const frameFooterPadding = resolveSpacingPadding(
+      frameSpacing,
+      (expression) => resolveValue(expression, runtimeContext),
+      'footerPadding'
+    )
+    const frameMarginStyle = { margin: frameMargin } as CSSProperties
+    const frameContentPadding = resolvePagePaddingValue(
+      {
+        paddingMode: frameSpacing.marginMode === 'none' ? 'none' : 'normal',
+        paddingFxEnabled: frameSpacing.marginFxEnabled,
+        paddingFx: frameSpacing.marginFx,
+      },
+      (expression) => resolveValue(expression, runtimeContext)
+    )
+    const frameContentInsetStyle = { padding: frameContentPadding } as CSSProperties
+    const sidebarContentInsetStyle = { padding: framePadding } as CSSProperties
+    const frameBorderClass = frameVisual.bordered ? 'border border-border' : 'border border-transparent'
+    const frameBackgroundClass = getGlobalFrameBackgroundClass(frameVisual.background)
+    const framePaddingClass = getGlobalFramePaddingClass(frameVisual.padding)
+    const sidebarConfig = resolveSidebarPanelConfig(frameRawProps)
+    const sidebarEdgeBorderClass = sidebarConfig.bordered
+      ? sidebarConfig.side === 'right'
+        ? 'border-l border-sidebar-border'
+        : 'border-r border-sidebar-border'
+      : 'border-none'
+    const sidebarChildren = widget.children ?? []
+    const selectSidebarChildren = (slot: 'header' | 'body' | 'footer', includeUnassigned = false) =>
+      sidebarChildren.filter((child) => {
+        const childSlot = (
+          typeof child.props?.containerSlot === 'string' ? child.props.containerSlot : ''
+        )
+          .trim()
+          .toLowerCase()
+        if (slot === 'body') {
+          if (childSlot === 'body') {
+            return true
+          }
+          return includeUnassigned ? childSlot.length === 0 : false
+        }
+        return childSlot === slot
+      })
+    const headerChildren = selectSidebarChildren('header')
+    const bodyChildren = selectSidebarChildren('body', true)
+    const footerChildren = selectSidebarChildren('footer')
+    const slotMinHeightPx = 5 * gridRowHeight + 4 * gridMargin
+
+    if (variant === 'sidebar') {
+      return (
+        <div
+          key={widget.id}
+          className={cn('flex h-full min-h-0 shrink-0 flex-col', isAppVariant ? 'w-full' : 'w-auto')}
+          style={{
+            width: `${sidebarConfig.panelWidth}px`,
+            minWidth: `${sidebarConfig.panelWidth}px`,
+            maxWidth: `${sidebarConfig.panelWidth}px`,
+          }}
+        >
+          <div
+            data-builder-preview-widget-id={widget.id}
+            className={cn(
+              'flex h-full min-h-0 flex-col bg-sidebar text-sidebar-foreground',
+              sidebarEdgeBorderClass
+            )}
+            style={
+              {
+                ...(frameStyleScopeVars ?? {}),
+                ...buildSidebarThemeVars(sidebarConfig),
+              } as CSSProperties
+            }
+          >
+            {sidebarConfig.showHeader ? (
+              <div
+                className="border-b border-sidebar-border"
+                style={{ padding: frameHeaderPadding, minHeight: `${slotMinHeightPx}px` }}
+              >
+                {headerChildren.length > 0 ? (
+                  renderTree(headerChildren, 1)
+                ) : (
+                  <div className="rounded-md border border-dashed border-sidebar-border px-3 py-4 text-xs text-sidebar-foreground/70">
+                    Drop components here
+                  </div>
+                )}
+              </div>
+            ) : null}
+            <div className="min-h-0 flex-1" style={sidebarContentInsetStyle}>
+              <div className="h-full min-h-0">
+                {(bodyChildren.length > 0 ? renderTree(bodyChildren, 1) : null) ?? (
+                  <div className="rounded-md border border-dashed border-sidebar-border px-3 py-4 text-xs text-sidebar-foreground/70">
+                    {fallbackMessage}
+                  </div>
+                )}
+              </div>
+            </div>
+            {sidebarConfig.showFooter ? (
+              <div
+                className="border-t border-sidebar-border text-xs text-sidebar-foreground/70"
+                style={{ padding: frameFooterPadding, minHeight: `${slotMinHeightPx}px` }}
+              >
+                {footerChildren.length > 0 ? (
+                  renderTree(footerChildren, 1)
+                ) : (
+                  <div className="rounded-md border border-dashed border-sidebar-border px-3 py-4 text-xs text-sidebar-foreground/70">
+                    Drop components here
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )
+    }
+
+    if (isAppVariant) {
+      if (!childGrid) {
+        return null
+      }
+
+      if (variant === 'header') {
+        const headerStyle = { '--radius': '0px', ...(frameStyleScopeVars ?? {}) } as CSSProperties
+        const headerBorderClass = frameVisual.bordered
+          ? 'border-b border-border'
+          : 'border-b border-transparent'
+        return (
+          <div
+            key={widget.id}
+            data-builder-preview-widget-id={widget.id}
+            className={cn(
+              'flex w-full min-h-0 flex-col rounded-[var(--radius)]',
+              headerBorderClass,
+              frameBackgroundClass
+            )}
+            style={headerStyle}
+          >
+            <div style={frameContentInsetStyle}>
+              {childGrid}
+            </div>
+          </div>
+        )
+      }
+
+      if (variant === 'split') {
+        return (
+          <div
+            key={widget.id}
+            data-builder-preview-widget-id={widget.id}
+            className={cn(
+              'w-full',
+              'min-h-0 rounded-lg',
+              frameBackgroundClass,
+              frameBorderClass
+            )}
+            style={{ ...frameMarginStyle, ...(frameStyleScopeVars ?? {}) }}
+          >
+            <div className={framePaddingClass}>{childGrid}</div>
+          </div>
+        )
+      }
+
+      return (
+        <div
+          key={widget.id}
+          data-builder-preview-widget-id={widget.id}
+        >
+          {childGrid}
+        </div>
+      )
+    }
+
+    if (variant === 'header') {
+      const headerStyle = { '--radius': '0px', ...(frameStyleScopeVars ?? {}) } as CSSProperties
+      const headerBorderClass = frameVisual.bordered
+        ? 'border-b border-border'
+        : 'border-b border-transparent'
+      return (
+        <div
+          key={widget.id}
+          className={cn(
+            'flex flex-col rounded-[var(--radius)]',
+            headerBorderClass,
+            frameBackgroundClass
+          )}
+          data-builder-preview-widget-id={widget.id}
+          style={headerStyle}
+        >
+          <div style={frameContentInsetStyle}>
+            {childGrid ?? (
+              <div className="rounded-md border border-dashed border-foreground-muted/40 px-3 py-4 text-xs text-foreground-muted">
+                {fallbackMessage}
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    if (variant === 'split') {
+      return (
+        <div
+          key={widget.id}
+          className={cn('rounded-md', frameBackgroundClass, frameBorderClass)}
+          data-builder-preview-widget-id={widget.id}
+          style={{ ...frameMarginStyle, ...(frameStyleScopeVars ?? {}) }}
+        >
+          <div className={framePaddingClass}>
+            {childGrid ?? (
+              <div className="rounded-md border border-dashed border-foreground-muted/40 px-3 py-4 text-xs text-foreground-muted">
+                {fallbackMessage}
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
+
     const layoutClass =
-      variant === 'sidebar'
-        ? 'rounded-md border border-foreground-muted/30 bg-surface-100 px-4 py-3'
-        : variant === 'drawer' || variant === 'modal'
+      variant === 'drawer' || variant === 'modal'
           ? 'rounded-md border border-foreground-muted/30 bg-surface-200/80 px-4 py-3'
           : 'rounded-md border border-foreground-muted/30 bg-surface-100 px-4 py-3'
 
@@ -1039,7 +1298,7 @@ export const BuilderPreview = ({
     }
   }, [queryPayload])
 
-  const previewGrid = renderPreviewGrid(visibleTopLevelWidgets, 0)
+  const previewGrid = renderTree(visibleTopLevelWidgets, 0)
   const globalSections = useMemo(() => {
     const sections: Record<
       'header' | 'sidebar' | 'drawer' | 'modal' | 'split' | 'other',
@@ -1071,62 +1330,99 @@ export const BuilderPreview = ({
 
     return sections
   }, [visibleGlobalWidgets])
-  const pageGlobalSections = useMemo(() => {
-    const sections: Record<'header' | 'sidebar', BuilderWidgetInstance[]> = {
+  const pageFrameSections = useMemo(() => {
+    const sections: Record<
+      'header' | 'sidebar' | 'drawer' | 'modal' | 'split' | 'other',
+      BuilderWidgetInstance[]
+    > = {
       header: [],
       sidebar: [],
+      drawer: [],
+      modal: [],
+      split: [],
+      other: [],
     }
-    visiblePageGlobals.forEach((widget) => {
-      if (widget.type === 'GlobalHeader') {
-        sections.header.push(widget)
-      } else if (widget.type === 'GlobalSidebar') {
-        sections.sidebar.push(widget)
+    visiblePageFrameWidgets.forEach((widget) => {
+      if (widget.type === 'GlobalDrawer') {
+        sections.drawer.push(widget)
+      } else if (widget.type === 'GlobalModal') {
+        sections.modal.push(widget)
+      } else if (widget.type === 'GlobalSplitPane') {
+        sections.split.push(widget)
+      } else {
+        sections.other.push(widget)
       }
     })
     return sections
-  }, [visiblePageGlobals])
-  const activeHeaderWidgets =
-    pageGlobalSections.header.length > 0 ? pageGlobalSections.header : globalSections.header
-  const activeSidebarWidgets =
-    pageGlobalSections.sidebar.length > 0 ? pageGlobalSections.sidebar : globalSections.sidebar
+  }, [visiblePageFrameWidgets])
+  const activeHeaderWidgets = globalSections.header
+  const [activeLeftSidebarWidgets, activeRightSidebarWidgets] = useMemo(() => {
+    const splitBySide = (widgets: BuilderWidgetInstance[]) => {
+      const left: BuilderWidgetInstance[] = []
+      const right: BuilderWidgetInstance[] = []
+      widgets.forEach((widget) => {
+        const resolved = resolveValue(widget.props ?? {}, runtimeContext)
+        const props = (resolved && typeof resolved === 'object'
+          ? (resolved as Record<string, unknown>)
+          : undefined) as Record<string, unknown> | undefined
+        const config = resolveSidebarPanelConfig(props)
+        if (config.side === 'right') {
+          right.push(widget)
+        } else {
+          left.push(widget)
+        }
+      })
+      return { left, right }
+    }
+
+    const global = splitBySide(globalSections.sidebar)
+
+    return [global.left, global.right]
+  }, [globalSections.sidebar, runtimeContext])
+  const activeSplitWidgets = pageFrameSections.split
+  const activeOverlayDrawers = pageFrameSections.drawer
+  const activeOverlayModals = pageFrameSections.modal
+  const activeOtherOverlayWidgets = pageFrameSections.other
   const hasVisibleContent =
     visibleTopLevelWidgets.length > 0 ||
     visibleGlobalWidgets.length > 0 ||
-    visiblePageGlobals.length > 0 ||
+    visiblePageFrameWidgets.length > 0 ||
     menuItems.length > 0
   const hasAnyWidgets =
     flattenedActiveWidgets.length > 0 || flattenedGlobalWidgets.length > 0
 
   return (
-    <div className="flex h-full min-h-0 flex-col p-4">
-      <div className="flex items-center justify-between rounded-lg border border-foreground-muted/30 bg-surface-100 px-4 py-3">
-        <div className="space-y-1">
-          <div className="text-xs uppercase text-foreground-muted">Preview</div>
-          <div className="text-sm font-medium text-foreground">
-            {activePage?.name ?? 'No pages yet'}
+    <div className={isAppVariant ? 'flex h-full min-h-0 flex-col' : 'flex h-full min-h-0 flex-col p-4'}>
+      {!isAppVariant && (
+        <div className="flex items-center justify-between rounded-lg border border-foreground-muted/30 bg-surface-100 px-4 py-3">
+          <div className="space-y-1">
+            <div className="text-xs uppercase text-foreground-muted">Preview</div>
+            <div className="text-sm font-medium text-foreground">
+              {activePage?.name ?? 'No pages yet'}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {activePage?.access && <Badge>{activePage.access}</Badge>}
+            <Select_Shadcn_
+              value={activePage?.id ?? ''}
+              onValueChange={onSelectPage}
+              disabled={pages.length === 0}
+            >
+              <SelectTrigger_Shadcn_ className="h-9 w-44">
+                <SelectValue_Shadcn_ placeholder="Choose page" />
+              </SelectTrigger_Shadcn_>
+              <SelectContent_Shadcn_>
+                {pages.map((page) => (
+                  <SelectItem_Shadcn_ key={page.id} value={page.id}>
+                    {page.name}
+                  </SelectItem_Shadcn_>
+                ))}
+              </SelectContent_Shadcn_>
+            </Select_Shadcn_>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {activePage?.access && <Badge>{activePage.access}</Badge>}
-          <Select_Shadcn_
-            value={activePage?.id ?? ''}
-            onValueChange={onSelectPage}
-            disabled={pages.length === 0}
-          >
-            <SelectTrigger_Shadcn_ className="h-9 w-44">
-              <SelectValue_Shadcn_ placeholder="Choose page" />
-            </SelectTrigger_Shadcn_>
-            <SelectContent_Shadcn_>
-              {pages.map((page) => (
-                <SelectItem_Shadcn_ key={page.id} value={page.id}>
-                  {page.name}
-                </SelectItem_Shadcn_>
-              ))}
-            </SelectContent_Shadcn_>
-          </Select_Shadcn_>
-        </div>
-      </div>
-      {!hasExternalPolicies && policyKeys.length > 0 && (
+      )}
+      {!isAppVariant && !hasExternalPolicies && policyKeys.length > 0 && (
         <div className="mt-3 rounded-lg border border-foreground-muted/30 bg-surface-100 px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="text-xs uppercase text-foreground-muted">Policy preview</div>
@@ -1150,7 +1446,7 @@ export const BuilderPreview = ({
           </ScrollArea>
         </div>
       )}
-      {queryRun && (
+      {!isAppVariant && queryRun && (
         <div className="mt-3 rounded-lg border border-foreground-muted/30 bg-surface-100 px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -1171,16 +1467,16 @@ export const BuilderPreview = ({
               )}
               <ToggleGroup
                 type="single"
-                size="sm"
+                size="small"
                 value={queryView}
                 onValueChange={(value) =>
                   value && setQueryView(value as 'table' | 'json')
                 }
               >
-                <ToggleGroupItem value="table" size="sm" className="h-[26px] px-2">
+                <ToggleGroupItem value="table" size="small" className="h-[26px] px-2">
                   Table
                 </ToggleGroupItem>
-                <ToggleGroupItem value="json" size="sm" className="h-[26px] px-2">
+                <ToggleGroupItem value="json" size="small" className="h-[26px] px-2">
                   JSON
                 </ToggleGroupItem>
               </ToggleGroup>
@@ -1229,7 +1525,20 @@ export const BuilderPreview = ({
           </div>
         </div>
       )}
-      <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-lg border border-foreground-muted/30 bg-surface-100/80 p-6">
+      {themeCssText ? (
+        <style data-builder-theme-vars>
+          {`.builder-app-theme-scope { ${themeCssText} }`}
+        </style>
+      ) : null}
+      {themeCustomCss ? <style data-builder-custom-css>{themeCustomCss}</style> : null}
+      <div
+        className={cn(
+          'builder-app-theme-scope flex min-h-0 flex-1 flex-col',
+          isAppVariant
+            ? 'bg-background text-foreground'
+            : 'mt-4 rounded-lg border border-foreground-muted/30 bg-surface-100/80 p-6'
+        )}
+      >
         {!activePage ? (
           <div className="flex h-full items-center justify-center text-sm text-foreground-muted">
             Create a page to see the preview.
@@ -1241,14 +1550,16 @@ export const BuilderPreview = ({
               : 'Add widgets to preview the layout.'}
           </div>
         ) : (
-          <div className="flex h-full flex-col gap-4">
+          <div className={isAppVariant ? 'flex h-full flex-col' : 'flex h-full flex-col gap-4'}>
             {activeHeaderWidgets.length > 0 && (
-              <div className="space-y-3">
-                <div className="text-xs uppercase text-foreground-muted">Header</div>
+              <div className={isAppVariant ? 'shrink-0' : 'space-y-3'}>
+                {!isAppVariant && (
+                  <div className="text-xs uppercase text-foreground-muted">Header</div>
+                )}
                 {activeHeaderWidgets.map((widget) => renderGlobalWidget(widget, 'header'))}
               </div>
             )}
-            {menuItems.length > 0 && (
+            {!isAppVariant && menuItems.length > 0 && (
               <div className="rounded-md border border-foreground-muted/30 bg-surface-100 px-4 py-3">
                 <div className="text-xs uppercase text-foreground-muted">Menu</div>
                 <div className="mt-2 space-y-2">
@@ -1258,21 +1569,30 @@ export const BuilderPreview = ({
                 </div>
               </div>
             )}
-            <div className="flex min-h-0 flex-1 gap-4">
-              {activeSidebarWidgets.length > 0 && (
-                <div className="flex w-72 flex-col gap-3">
-                  {activeSidebarWidgets.map((widget) => renderGlobalWidget(widget, 'sidebar'))}
+            <div className={isAppVariant ? 'flex min-h-0 flex-1' : 'flex min-h-0 flex-1 gap-4'}>
+              {activeLeftSidebarWidgets.length > 0 && (
+                <div
+                  className={
+                    isAppVariant
+                      ? 'flex h-full min-h-0 w-auto flex-col self-stretch'
+                      : 'flex w-auto flex-col gap-3'
+                  }
+                >
+                  {activeLeftSidebarWidgets.map((widget) => renderGlobalWidget(widget, 'sidebar'))}
                 </div>
               )}
               <div className="min-h-0 flex-1 overflow-auto">
                 <div
                   className={cn(
-                    'rounded-md border border-foreground-muted/30 bg-surface-100 shadow-sm',
-                    activePage?.pageComponent?.expandToFit ? 'min-h-0' : 'min-h-full'
+                    isAppVariant
+                      ? 'min-h-full'
+                      : 'rounded-md border border-foreground-muted/30 bg-surface-100 shadow-sm',
+                    activePageMain?.expandToFit ? 'min-h-0' : 'min-h-full'
                   )}
                   style={{
-                    backgroundColor: activePage?.pageComponent?.background || undefined,
-                    padding: resolvePagePadding(activePage?.pageComponent, runtimeContext),
+                    backgroundColor: activePageMain?.background || undefined,
+                    padding: resolvePagePadding(activePageMain, runtimeContext),
+                    maxWidth: resolveAppMaxWidth(appMeta),
                   }}
                 >
                   {previewGrid ?? (
@@ -1284,25 +1604,37 @@ export const BuilderPreview = ({
                   )}
                 </div>
               </div>
+              {activeRightSidebarWidgets.length > 0 && (
+                <div
+                  className={
+                    isAppVariant
+                      ? 'flex h-full min-h-0 w-auto flex-col self-stretch'
+                      : 'flex w-auto flex-col gap-3'
+                  }
+                >
+                  {activeRightSidebarWidgets.map((widget) => renderGlobalWidget(widget, 'sidebar'))}
+                </div>
+              )}
             </div>
-            {globalSections.split.length > 0 && (
+            {!isAppVariant && activeSplitWidgets.length > 0 && (
               <div className="space-y-3">
                 <div className="text-xs uppercase text-foreground-muted">Split pane</div>
-                {globalSections.split.map((widget) => renderGlobalWidget(widget, 'split'))}
+                {activeSplitWidgets.map((widget) => renderGlobalWidget(widget, 'split'))}
               </div>
             )}
-            {(globalSections.drawer.length > 0 ||
-              globalSections.modal.length > 0 ||
-              globalSections.other.length > 0) && (
-              <div className="space-y-3">
-                <div className="text-xs uppercase text-foreground-muted">Overlays</div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {globalSections.drawer.map((widget) => renderGlobalWidget(widget, 'drawer'))}
-                  {globalSections.modal.map((widget) => renderGlobalWidget(widget, 'modal'))}
-                  {globalSections.other.map((widget) => renderGlobalWidget(widget, 'other'))}
+            {!isAppVariant &&
+              (activeOverlayDrawers.length > 0 ||
+                activeOverlayModals.length > 0 ||
+                activeOtherOverlayWidgets.length > 0) && (
+                <div className="space-y-3">
+                  <div className="text-xs uppercase text-foreground-muted">Overlays</div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {activeOverlayDrawers.map((widget) => renderGlobalWidget(widget, 'drawer'))}
+                    {activeOverlayModals.map((widget) => renderGlobalWidget(widget, 'modal'))}
+                    {activeOtherOverlayWidgets.map((widget) => renderGlobalWidget(widget, 'other'))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         )}
       </div>
@@ -1463,25 +1795,6 @@ const parseNumber = (value: unknown, fallback = 0) => {
   return fallback
 }
 
-const parseBoolean = (value: unknown, fallback = false) => {
-  if (typeof value === 'boolean') {
-    return value
-  }
-  if (typeof value === 'number') {
-    return value !== 0
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim().toLowerCase()
-    if (['true', '1', 'yes', 'y'].includes(trimmed)) {
-      return true
-    }
-    if (['false', '0', 'no', 'n'].includes(trimmed)) {
-      return false
-    }
-  }
-  return fallback
-}
-
 const shouldRunOnlyWhen = (value: unknown) => {
   if (value === undefined || value === null || value === '') {
     return true
@@ -1621,87 +1934,21 @@ const formatCell = (value: unknown) => {
 }
 
 const resolvePagePadding = (
-  pageComponent: BuilderPage['pageComponent'] | undefined,
+  pageMain: BuilderPage['pageLayout']['main'] | undefined,
   runtimeContext: Record<string, unknown>
 ) => {
-  const value = resolvePagePaddingValue(pageComponent, (expression) =>
+  const value = resolvePagePaddingValue(pageMain, (expression) =>
     resolveValue(expression, runtimeContext)
   )
   return value ? value : 0
 }
 
-const GRID_COLUMNS = 12
-const DEFAULT_ITEM = {
-  w: 4,
-  h: 6,
-  minW: 2,
-  minH: 3,
-}
-
-const flattenWidgets = (widgets: BuilderWidgetInstance[]): BuilderWidgetInstance[] => {
-  const flattened: BuilderWidgetInstance[] = []
-  widgets.forEach((widget) => {
-    flattened.push(widget)
-    if (widget.children && widget.children.length > 0) {
-      flattened.push(...flattenWidgets(widget.children))
-    }
-  })
-  return flattened
-}
-
-const normalizeLayout = (widget: BuilderWidgetInstance, index: number): Layout => {
-  const columnsPerRow = Math.max(1, Math.floor(GRID_COLUMNS / DEFAULT_ITEM.w))
-  const fallback = {
-    ...DEFAULT_ITEM,
-    x: (index % columnsPerRow) * DEFAULT_ITEM.w,
-    y: Math.floor(index / columnsPerRow) * DEFAULT_ITEM.h,
+const resolveAppMaxWidth = (appMeta: BuilderAppMeta | undefined) => {
+  if (!appMeta?.maxWidth) {
+    return undefined
   }
-  const layout = widget.layout ?? fallback
-  return {
-    i: widget.id,
-    x: layout.x ?? fallback.x,
-    y: layout.y ?? fallback.y,
-    w: layout.w ?? fallback.w,
-    h: layout.h ?? fallback.h,
-    minW: layout.minW ?? fallback.minW,
-    minH: layout.minH ?? fallback.minH,
-    maxW: layout.maxW,
-    maxH: layout.maxH,
-  }
-}
-
-const isWidgetAllowed = (
-  widget: BuilderWidgetInstance,
-  policies: Record<string, boolean>
-) => {
-  const required = widget.policy ?? []
-  if (required.length === 0) {
-    return true
-  }
-
-  return required.every((policy) => Boolean(policies[policy]))
-}
-
-const isWidgetVisible = (
-  widget: BuilderWidgetInstance,
-  policies: Record<string, boolean>,
-  runtimeContext: Record<string, unknown>,
-  widgetState?: Record<string, Record<string, unknown>>,
-  options?: {
-    includeHidden?: boolean
-  }
-): boolean => {
-  const hiddenOverride = widgetState?.[widget.id]?.hidden
-  const baseHidden = parseBoolean(resolveValue(widget.hidden, runtimeContext), false)
-  const isHidden = parseBoolean(hiddenOverride, baseHidden)
-  if (isHidden && !options?.includeHidden) {
-    return false
-  }
-  const hasPolicies = Object.keys(policies).length > 0
-  if (hasPolicies && !isWidgetAllowed(widget, policies)) {
-    return false
-  }
-  return evaluateCondition(widget.visibleWhen, policies) !== false
+  const value = appMeta.maxWidth.trim()
+  return value.length > 0 ? value : undefined
 }
 
 const filterMenuItems = (

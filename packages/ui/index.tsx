@@ -252,6 +252,10 @@ export {
 export * from './src/components/shadcn/ui/calendar'
 
 export { Toggle as Toggle_Shadcn } from './src/components/shadcn/ui/toggle'
+export { 
+  ToggleGroup as ToggleGroup_Shadcn_,
+  ToggleGroupItem as ToggleGroupItem_Shadcn_
+} from './src/components/shadcn/ui/toggle-group'
 
 export { ScrollArea, ScrollBar, ScrollViewport } from './src/components/shadcn/ui/scroll-area'
 

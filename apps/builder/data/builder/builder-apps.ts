@@ -3,14 +3,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { builderRequest, withProjectRef } from './builder-client'
 import { builderKeys } from './keys'
 import type { ResponseError, UseCustomMutationOptions, UseCustomQueryOptions } from 'types'
+import type { BuilderAppTheme } from 'state/app-theme-state'
 
 export type BuilderApp = {
   id: string
   name: string
+  slug?: string | null
+  appSlug?: string | null
+  technicalDomain?: string | null
   projectRef?: string | null
   orgSlug: string
   ownerId?: string | null
   instanceId?: string | null
+  theme?: BuilderAppTheme | null
   insertedAt?: string
   updatedAt?: string
 }
@@ -34,6 +39,7 @@ export type BuilderAppCreateVariables = {
 export type BuilderAppUpdateVariables = {
   appId: string
   name?: string
+  theme?: BuilderAppTheme | null
 }
 
 export type BuilderAppDeleteVariables = {
@@ -111,7 +117,9 @@ export const useCreateBuilderAppMutation = ({
   return useMutation<BuilderApp, BuilderAppsError, BuilderAppCreateVariables>({
     mutationFn: (vars) => createBuilderApp(vars),
     async onSuccess(data, variables, context) {
-      await queryClient.invalidateQueries({ queryKey: builderKeys.apps(variables.projectRef) })
+      await queryClient.invalidateQueries({
+        queryKey: builderKeys.apps(variables.projectRef ?? undefined),
+      })
       await onSuccess?.(data, variables, context)
     },
     ...options,

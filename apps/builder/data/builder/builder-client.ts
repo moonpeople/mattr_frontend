@@ -11,7 +11,7 @@ const resolveBuilderBase = () => {
 const BUILDER_BASE_URL = resolveBuilderBase()
 
 type BuilderRequestOptions = {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: Record<string, unknown>
   signal?: AbortSignal
 }

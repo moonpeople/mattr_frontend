@@ -76,8 +76,11 @@ export const LayoutHeader = ({
     router.pathname === '/' ||
     router.pathname === '/builder' ||
     router.pathname.startsWith('/builder/')
+  const isBuilderRoute = router.pathname === '/builder' || router.pathname.startsWith('/builder/')
   const showOrgSelection =
     !isAccountPage && (slug || projectRef || isAppsRoute || !!selectedOrganization)
+  const showBuilderHeaderActions = isBuilderRoute && Boolean(appId)
+  const showAssistantButton = Boolean(projectRef) || isBuilderRoute
 
   return (
     <>
@@ -182,7 +185,7 @@ export const LayoutHeader = ({
             </div>
 
             <AnimatePresence>
-              {projectRef && (
+              {projectRef && !isBuilderRoute && (
                 <motion.div
                   className="ml-3 items-center gap-x-2 flex"
                   initial={{ opacity: 0, x: -20 }}
@@ -195,6 +198,22 @@ export const LayoutHeader = ({
                 >
                   {IS_PLATFORM && gitlessBranching && <MergeRequestButton />}
                   <Connect />
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <AnimatePresence>
+              {showBuilderHeaderActions && (
+                <motion.div
+                  className="ml-3 items-center gap-x-2 flex"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{
+                    duration: 0.15,
+                    ease: 'easeOut',
+                  }}
+                >
+                  <div id="builder-header-actions" className="flex items-center gap-x-2" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -221,9 +240,9 @@ export const LayoutHeader = ({
                   <HelpPopover />
                   <AdvisorButton projectRef={projectRef} />
                   <AnimatePresence initial={false}>
-                    {!!projectRef && (
+                    {showAssistantButton && (
                       <>
-                        <InlineEditorButton />
+                        {!!projectRef && <InlineEditorButton />}
                         <AssistantButton />
                       </>
                     )}
@@ -246,9 +265,9 @@ export const LayoutHeader = ({
                   />
                   <AdvisorButton projectRef={projectRef} />
                   <AnimatePresence initial={false}>
-                    {!!projectRef && (
+                    {showAssistantButton && (
                       <>
-                        <InlineEditorButton />
+                        {!!projectRef && <InlineEditorButton />}
                         <AssistantButton />
                       </>
                     )}

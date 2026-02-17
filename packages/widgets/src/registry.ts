@@ -1,256 +1,300 @@
-import type { WidgetDefinition, WidgetInspectorConfig } from './types'
-import { resolveInspectorFields } from './inspectorFieldRegistry'
-import { AgentChatWidget } from './widgets/AgentChat'
-import { AuthLoginWidget } from './widgets/AuthLogin'
-import { ButtonWidget } from './widgets/Button'
-import { ButtonGroupWidget } from './widgets/ButtonGroup'
-import { CascaderWidget } from './widgets/Cascader'
-import { ChartWidget } from './widgets/Chart'
-import { CheckboxWidget } from './widgets/Checkbox'
-import { CheckboxGroupWidget } from './widgets/CheckboxGroup'
-import { CheckboxTreeWidget } from './widgets/CheckboxTree'
-import { ChatWidget } from './widgets/Chat'
-import { CommentThreadWidget } from './widgets/CommentThread'
-import { BreadcrumbsWidget } from './widgets/Breadcrumbs'
-import { ColorInputWidget } from './widgets/ColorInput'
-import { ContainerWidget } from './widgets/Container'
-import { DatePickerWidget } from './widgets/DatePicker'
-import { DateRangePickerWidget } from './widgets/DateRangePicker'
-import { DateTimePickerWidget } from './widgets/DateTimePicker'
-import { DividerWidget } from './widgets/Divider'
-import { DropdownButtonWidget } from './widgets/DropdownButton'
-import { EditableNumberWidget } from './widgets/EditableNumber'
-import { EditableTextWidget } from './widgets/EditableText'
-import { EditableTextAreaWidget } from './widgets/EditableTextArea'
-import { EditableTextInspector } from './widgets/EditableText.inspector'
-import { EditableTextAreaInspector } from './widgets/EditableTextArea.inspector'
-import { AvatarWidget } from './widgets/Avatar'
-import { AlertWidget } from './widgets/Alert'
-import { AvatarGroupWidget } from './widgets/AvatarGroup'
-import { BoundingBoxWidget } from './widgets/BoundingBox'
-import { FilterWidget } from './widgets/Filter'
-import { FormWidget } from './widgets/Form'
-import { JsonSchemaFormWidget } from './widgets/JsonSchemaForm'
-import { LookerWidget } from './widgets/Looker'
-import { MapWidget } from './widgets/Map'
-import { MicrophoneWidget } from './widgets/Microphone'
-import { RatingWidget } from './widgets/Rating'
-import { QRCodeWidget } from './widgets/QRCode'
-import { ReorderableListWidget } from './widgets/ReorderableList'
-import { ScannerWidget } from './widgets/Scanner'
-import { SignaturePadWidget } from './widgets/SignaturePad'
-import { StripeCardFormWidget } from './widgets/StripeCardForm'
-import { TextAnnotationWidget } from './widgets/TextAnnotation'
-import { TimerWidget } from './widgets/Timer'
-import { VideoWidget } from './widgets/Video'
-import { WizardWidget } from './widgets/Wizard'
+import type { WidgetDefinition } from './types'
+import { normalizeWidgetType } from './registry-utils'
 import {
-  GlobalDrawerWidget,
-  GlobalHeaderWidget,
-  GlobalModalWidget,
-  GlobalSidebarWidget,
-  GlobalSplitPaneWidget,
-} from './widgets/GlobalFrame'
+  resolveWidgetEventActionOptions,
+  resolveWidgetEventOptions,
+} from './event-handlers-config'
+import { AlertDefinition } from './definitions/Alert.definition'
+import { AgentChatDefinition } from './definitions/AgentChat.definition'
+import { AvatarDefinition } from './definitions/Avatar.definition'
+import { AvatarGroupDefinition } from './definitions/AvatarGroup.definition'
+import { BreadcrumbsDefinition } from './definitions/Breadcrumbs.definition'
+import { ButtonDefinition } from './definitions/Button.definition'
+import { ButtonGroupDefinition } from './definitions/ButtonGroup.definition'
+import { CloseButtonDefinition } from './definitions/CloseButton.definition'
+import { CalendarDefinition } from './definitions/Calendar.definition'
+import { CascaderDefinition } from './definitions/Cascader.definition'
+import { ChatDefinition } from './definitions/Chat.definition'
+import { ChartDefinition } from './definitions/Chart.definition'
+import { ColorInputDefinition } from './definitions/ColorInput.definition'
+import { CommentThreadDefinition } from './definitions/CommentThread.definition'
+import { AuthLoginDefinition } from './definitions/AuthLogin.definition'
+import { DropdownButtonDefinition } from './definitions/DropdownButton.definition'
+import { DrawerDefinition } from './definitions/Drawer.definition'
+import { EditableTextAreaDefinition } from './definitions/EditableTextArea.definition'
+import { EditableTextDefinition } from './definitions/EditableText.definition'
+import { CurrencyDefinition } from './definitions/Currency.definition'
+import { PercentDefinition } from './definitions/Percent.definition'
+import { EmailDefinition } from './definitions/Email.definition'
+import { FileUploadDefinition } from './definitions/FileUpload.definition'
+import { FilterDefinition } from './definitions/Filter.definition'
+import { HeaderDefinition } from './definitions/Header.definition'
+import { HtmlDefinition } from './definitions/Html.definition'
+import { IFrameDefinition } from './definitions/IFrame.definition'
+import { ImageGridDefinition } from './definitions/ImageGrid.definition'
+import { JsonEditorDefinition } from './definitions/JsonEditor.definition'
+import { JsonExplorerDefinition } from './definitions/JsonExplorer.definition'
+import { JsonSchemaFormDefinition } from './definitions/JsonSchemaForm.definition'
+import { KeyValueDefinition } from './definitions/KeyValue.definition'
+import { KeyValueMapDefinition } from './definitions/KeyValueMap.definition'
+import { ListViewDefinition } from './definitions/ListView.definition'
+import { LinkDefinition } from './definitions/Link.definition'
+import { LinkListDefinition } from './definitions/LinkList.definition'
+import { LookerDefinition } from './definitions/Looker.definition'
+import { MapDefinition } from './definitions/Map.definition'
+import { PdfViewerDefinition } from './definitions/PdfViewer.definition'
+import { QRCodeDefinition } from './definitions/QRCode.definition'
+import { ReorderableListDefinition } from './definitions/ReorderableList.definition'
+import { ContainerDefinition } from './definitions/Container.definition'
+import { CollapsibleContainerDefinition } from './definitions/CollapsibleContainer.definition'
+import { DividerDefinition } from './definitions/Divider.definition'
+import { FormDefinition } from './definitions/Form.definition'
+import { IconDefinition } from './definitions/Icon.definition'
+import { ImageDefinition } from './definitions/Image.definition'
+import { LinkCardDefinition } from './definitions/LinkCard.definition'
+import { ModalDefinition } from './definitions/Modal.definition'
+import { MicrophoneDefinition } from './definitions/Microphone.definition'
+import { NavigationDefinition } from './definitions/Navigation.definition'
+import { ProgressBarDefinition } from './definitions/ProgressBar.definition'
+import { ProgressCircleDefinition } from './definitions/ProgressCircle.definition'
+import { RatingDefinition } from './definitions/Rating.definition'
+import { ScannerDefinition } from './definitions/Scanner.definition'
+import { SignaturePadDefinition } from './definitions/SignaturePad.definition'
+import { SplitButtonDefinition } from './definitions/SplitButton.definition'
+import { SplitPaneDefinition } from './definitions/SplitPane.definition'
+import { SpacerDefinition } from './definitions/Spacer.definition'
+import { StatusDefinition } from './definitions/Status.definition'
+import { StripeCardFormDefinition } from './definitions/StripeCardForm.definition'
+import { TagsDefinition } from './definitions/Tags.definition'
+import { TableDefinition } from './definitions/Table.definition'
+import { TextDefinition } from './definitions/Text.definition'
+import { TextAnnotationDefinition } from './definitions/TextAnnotation.definition'
+import { TextEditorDefinition } from './definitions/TextEditor.definition'
+import { TimelineDefinition } from './definitions/Timeline.definition'
+import { TimerDefinition } from './definitions/Timer.definition'
+import { ToggleButtonDefinition } from './definitions/ToggleButton.definition'
+import { ToggleLinkDefinition } from './definitions/ToggleLink.definition'
+import { UrlDefinition } from './definitions/Url.definition'
+import { VideoDefinition } from './definitions/Video.definition'
+import { BoundingBoxDefinition } from './definitions/BoundingBox.definition'
+import { PhoneNumberInputDefinition } from './definitions/PhoneNumberInput.definition'
+import { EditableNumberDefinition } from './definitions/EditableNumber.definition'
+import { WizardDefinition } from './definitions/Wizard.definition'
+import { CheckboxDefinition } from './definitions/Checkbox.definition'
+import { CheckboxGroupDefinition } from './definitions/CheckboxGroup.definition'
+import { CheckboxTreeDefinition } from './definitions/CheckboxTree.definition'
+import { DatePickerDefinition } from './definitions/DatePicker.definition'
+import { DateRangePickerDefinition } from './definitions/DateRangePicker.definition'
+import { DateTimePickerDefinition } from './definitions/DateTimePicker.definition'
+import { DatetimeInputDefinition } from './definitions/DatetimeInput.definition'
+import { CalendarInputDefinition } from './definitions/CalendarInput.definition'
+import { DateDefinition } from './definitions/Date.definition'
+import { DateRangeDefinition } from './definitions/DateRange.definition'
+import { DateTimeDefinition } from './definitions/DateTime.definition'
+import { DayDefinition } from './definitions/Day.definition'
+import { MonthDefinition } from './definitions/Month.definition'
+import { PageInputDefinition } from './definitions/PageInput.definition'
+import { PaginationDefinition } from './definitions/Pagination.definition'
+import { ListboxDefinition } from './definitions/Listbox.definition'
+import { MultiSelectDefinition } from './definitions/MultiSelect.definition'
+import { MultiSelectListboxDefinition } from './definitions/MultiSelectListbox.definition'
+import { OtpInputDefinition } from './definitions/OtpInput.definition'
+import { PasswordInputDefinition } from './definitions/PasswordInput.definition'
+import { RadioGroupDefinition } from './definitions/RadioGroup.definition'
+import { RangeSliderDefinition } from './definitions/RangeSlider.definition'
+import { SelectDefinition } from './definitions/Select.definition'
+import { SegmentedControlDefinition } from './definitions/SegmentedControl.definition'
+import { SidebarDefinition } from './definitions/Sidebar.definition'
+import { SliderDefinition } from './definitions/Slider.definition'
+import { StatisticDefinition } from './definitions/Statistic.definition'
+import { StackDefinition } from './definitions/Stack.definition'
+import { StepsDefinition } from './definitions/Steps.definition'
+import { SteppedContainerDefinition } from './definitions/SteppedContainer.definition'
+import { SwitchDefinition } from './definitions/Switch.definition'
+import { SwitchGroupDefinition } from './definitions/SwitchGroup.definition'
+import { TabsDefinition } from './definitions/Tabs.definition'
+import { TabbedContainerDefinition } from './definitions/TabbedContainer.definition'
+import { TextInputDefinition } from './definitions/TextInput.definition'
+import { NumberInputDefinition } from './definitions/NumberInput.definition'
+import { OutlineButtonDefinition } from './definitions/OutlineButton.definition'
+import { TextAreaDefinition } from './definitions/TextArea.definition'
+import { TimePickerDefinition } from './definitions/TimePicker.definition'
+import { TimeDefinition } from './definitions/Time.definition'
 import {
-  DrawerCloseButtonWidget,
-  DrawerFooterWidget,
-  DrawerHeaderWidget,
-  DrawerTitleWidget,
-  ModalCloseButtonWidget,
-  ModalFooterWidget,
-  ModalHeaderWidget,
-  ModalTitleWidget,
-} from './widgets/FrameAddons'
-import { HtmlWidget } from './widgets/Html'
-import { IconWidget } from './widgets/Icon'
-import { IFrameWidget } from './widgets/IFrame'
-import { ImageWidget } from './widgets/Image'
-import { ImageGridWidget } from './widgets/ImageGrid'
-import { KeyValueWidget } from './widgets/KeyValue'
-import { KeyValueMapWidget } from './widgets/KeyValueMap'
-import { ListViewWidget } from './widgets/ListView'
-import { ListboxWidget } from './widgets/Listbox'
-import { LinkWidget } from './widgets/Link'
-import { LinkListWidget } from './widgets/LinkList'
-import { ModalWidget } from './widgets/Modal'
-import { MultiSelectWidget } from './widgets/MultiSelect'
-import { MultiSelectListboxWidget } from './widgets/MultiSelectListbox'
-import { NumberInputWidget } from './widgets/NumberInput'
-import { PaginationWidget } from './widgets/Pagination'
-import { PageInputWidget } from './widgets/PageInput'
-import { PasswordInputWidget } from './widgets/PasswordInput'
-import { PdfViewerWidget } from './widgets/PdfViewer'
-import { SegmentedControlWidget } from './widgets/SegmentedControl'
-import { PhoneNumberInputWidget } from './widgets/PhoneNumberInput'
-import { ProgressBarWidget } from './widgets/ProgressBar'
-import { ProgressCircleWidget } from './widgets/ProgressCircle'
-import { RadioGroupWidget } from './widgets/RadioGroup'
-import { RangeSliderWidget } from './widgets/RangeSlider'
-import { FileUploadWidget } from './widgets/FileUpload'
-import { NavigationWidget } from './widgets/Navigation'
-import { SelectWidget } from './widgets/Select'
-import { SliderWidget } from './widgets/Slider'
-import { SpacerWidget } from './widgets/Spacer'
-import { SplitButtonWidget } from './widgets/SplitButton'
-import { StatisticWidget } from './widgets/Statistic'
-import { StatusWidget } from './widgets/Status'
-import { SwitchWidget } from './widgets/Switch'
-import { SwitchGroupWidget } from './widgets/SwitchGroup'
-import { StepsWidget } from './widgets/Steps'
-import { TableWidget } from './widgets/Table'
-import { TabsWidget } from './widgets/Tabs'
-import { TagsWidget } from './widgets/Tags'
-import { TextAreaWidget } from './widgets/TextArea'
-import { TextEditorWidget } from './widgets/TextEditor'
-import { TextWidget } from './widgets/Text'
-import { TextInputWidget } from './widgets/TextInput'
-import { TimePickerWidget } from './widgets/TimePicker'
-import { ToggleButtonWidget } from './widgets/ToggleButton'
-import { ToggleLinkWidget } from './widgets/ToggleLink'
-import { JsonEditorWidget } from './widgets/JsonEditor'
-import { JsonExplorerWidget } from './widgets/JsonExplorer'
-import { TimelineWidget } from './widgets/Timeline'
+  GlobalDrawerDefinition,
+  GlobalHeaderDefinition,
+  GlobalModalDefinition,
+  GlobalSidebarDefinition,
+  GlobalSplitPaneDefinition,
+} from './frames/GlobalFrame.definition'
+import {
+  DrawerCloseButtonDefinition,
+  DrawerFooterDefinition,
+  DrawerHeaderDefinition,
+  DrawerTitleDefinition,
+  ModalCloseButtonDefinition,
+  ModalFooterDefinition,
+  ModalHeaderDefinition,
+  ModalTitleDefinition,
+} from './definitions/FrameAddons.definition'
+import { YearDefinition } from './definitions/Year.definition'
 
 const registry: WidgetDefinition[] = [
-  TextWidget,
-  AgentChatWidget,
-  ChatWidget,
-  CommentThreadWidget,
-  ButtonWidget,
-  ButtonGroupWidget,
-  AuthLoginWidget,
-  BreadcrumbsWidget,
-  LinkWidget,
-  LinkListWidget,
-  CascaderWidget,
-  TextInputWidget,
-  ColorInputWidget,
-  TextAreaWidget,
-  TextEditorWidget,
-  NumberInputWidget,
-  PasswordInputWidget,
-  MicrophoneWidget,
-  EditableTextWidget,
-  EditableTextAreaWidget,
-  EditableNumberWidget,
-  SignaturePadWidget,
-  PhoneNumberInputWidget,
-  SelectWidget,
-  SegmentedControlWidget,
-  MultiSelectWidget,
-  ListboxWidget,
-  MultiSelectListboxWidget,
-  RadioGroupWidget,
-  CheckboxWidget,
-  CheckboxGroupWidget,
-  CheckboxTreeWidget,
-  ToggleButtonWidget,
-  ToggleLinkWidget,
-  SwitchWidget,
-  SwitchGroupWidget,
-  SliderWidget,
-  RangeSliderWidget,
-  DatePickerWidget,
-  DateTimePickerWidget,
-  DateRangePickerWidget,
-  TimePickerWidget,
-  FileUploadWidget,
-  DropdownButtonWidget,
-  SplitButtonWidget,
-  StatisticWidget,
-  TagsWidget,
-  ProgressBarWidget,
-  ProgressCircleWidget,
-  RatingWidget,
-  DividerWidget,
-  FilterWidget,
-  StepsWidget,
-  PaginationWidget,
-  PageInputWidget,
-  ReorderableListWidget,
-  JsonEditorWidget,
-  JsonExplorerWidget,
-  JsonSchemaFormWidget,
-  HtmlWidget,
-  IFrameWidget,
-  LookerWidget,
-  MapWidget,
-  PdfViewerWidget,
-  ImageGridWidget,
-  QRCodeWidget,
-  VideoWidget,
-  AlertWidget,
-  AvatarGroupWidget,
-  StripeCardFormWidget,
-  StatusWidget,
-  TextAnnotationWidget,
-  BoundingBoxWidget,
-  ScannerWidget,
-  TimerWidget,
-  TimelineWidget,
-  KeyValueWidget,
-  KeyValueMapWidget,
-  GlobalHeaderWidget,
-  GlobalSidebarWidget,
-  GlobalDrawerWidget,
-  GlobalModalWidget,
-  GlobalSplitPaneWidget,
-  DrawerHeaderWidget,
-  DrawerFooterWidget,
-  DrawerTitleWidget,
-  DrawerCloseButtonWidget,
-  ModalHeaderWidget,
-  ModalFooterWidget,
-  ModalTitleWidget,
-  ModalCloseButtonWidget,
-  NavigationWidget,
-  ContainerWidget,
-  TabsWidget,
-  WizardWidget,
-  ModalWidget,
-  FormWidget,
-  TableWidget,
-  ListViewWidget,
-  ChartWidget,
-  ImageWidget,
-  AvatarWidget,
-  IconWidget,
-  SpacerWidget,
+  TextDefinition,
+  AgentChatDefinition,
+  ChatDefinition,
+  CommentThreadDefinition,
+  ButtonDefinition,
+  OutlineButtonDefinition,
+  CloseButtonDefinition,
+  ButtonGroupDefinition,
+  AuthLoginDefinition,
+  BreadcrumbsDefinition,
+  LinkDefinition,
+  LinkCardDefinition,
+  LinkListDefinition,
+  CalendarDefinition,
+  CascaderDefinition,
+  TextInputDefinition,
+  NumberInputDefinition,
+  CurrencyDefinition,
+  PercentDefinition,
+  EmailDefinition,
+  UrlDefinition,
+  ColorInputDefinition,
+  TextAreaDefinition,
+  TextEditorDefinition,
+  EditableNumberDefinition,
+  PasswordInputDefinition,
+  MicrophoneDefinition,
+  EditableTextDefinition,
+  EditableTextAreaDefinition,
+  SignaturePadDefinition,
+  PhoneNumberInputDefinition,
+  OtpInputDefinition,
+  SelectDefinition,
+  SegmentedControlDefinition,
+  MultiSelectDefinition,
+  ListboxDefinition,
+  MultiSelectListboxDefinition,
+  RadioGroupDefinition,
+  CheckboxDefinition,
+  CheckboxGroupDefinition,
+  CheckboxTreeDefinition,
+  ToggleButtonDefinition,
+  ToggleLinkDefinition,
+  SwitchDefinition,
+  SwitchGroupDefinition,
+  SliderDefinition,
+  RangeSliderDefinition,
+  DatetimeInputDefinition,
+  CalendarInputDefinition,
+  DateDefinition,
+  DateTimeDefinition,
+  DateRangeDefinition,
+  DayDefinition,
+  MonthDefinition,
+  TimeDefinition,
+  YearDefinition,
+  DatePickerDefinition,
+  DateTimePickerDefinition,
+  DateRangePickerDefinition,
+  TimePickerDefinition,
+  FileUploadDefinition,
+  DropdownButtonDefinition,
+  DrawerDefinition,
+  SplitButtonDefinition,
+  SplitPaneDefinition,
+  StatisticDefinition,
+  TagsDefinition,
+  ProgressBarDefinition,
+  ProgressCircleDefinition,
+  RatingDefinition,
+  DividerDefinition,
+  FilterDefinition,
+  StepsDefinition,
+  PaginationDefinition,
+  PageInputDefinition,
+  ReorderableListDefinition,
+  JsonEditorDefinition,
+  JsonExplorerDefinition,
+  JsonSchemaFormDefinition,
+  HtmlDefinition,
+  IFrameDefinition,
+  LookerDefinition,
+  MapDefinition,
+  PdfViewerDefinition,
+  ImageGridDefinition,
+  QRCodeDefinition,
+  VideoDefinition,
+  AlertDefinition,
+  AvatarGroupDefinition,
+  StripeCardFormDefinition,
+  StatusDefinition,
+  TextAnnotationDefinition,
+  BoundingBoxDefinition,
+  ScannerDefinition,
+  TimerDefinition,
+  TimelineDefinition,
+  KeyValueDefinition,
+  KeyValueMapDefinition,
+  HeaderDefinition,
+  SidebarDefinition,
+  GlobalHeaderDefinition,
+  GlobalSidebarDefinition,
+  GlobalDrawerDefinition,
+  GlobalModalDefinition,
+  GlobalSplitPaneDefinition,
+  DrawerHeaderDefinition,
+  DrawerFooterDefinition,
+  DrawerTitleDefinition,
+  DrawerCloseButtonDefinition,
+  ModalHeaderDefinition,
+  ModalFooterDefinition,
+  ModalTitleDefinition,
+  ModalCloseButtonDefinition,
+  NavigationDefinition,
+  ContainerDefinition,
+  CollapsibleContainerDefinition,
+  StackDefinition,
+  TabsDefinition,
+  TabbedContainerDefinition,
+  SteppedContainerDefinition,
+  WizardDefinition,
+  ModalDefinition,
+  FormDefinition,
+  TableDefinition,
+  ListViewDefinition,
+  ChartDefinition,
+  ImageDefinition,
+  AvatarDefinition,
+  IconDefinition,
+  SpacerDefinition,
 ]
 
-export const widgetRegistry = [...registry]
+const enrichBuilderConfig = (definition: WidgetDefinition): WidgetDefinition => ({
+  ...definition,
+  builder: {
+    ...definition.builder,
+    eventOptions: resolveWidgetEventOptions(definition),
+    eventActionOptions: resolveWidgetEventActionOptions(definition),
+  },
+})
 
-const inspectorRegistry = new Map<string, WidgetInspectorConfig>([
-  ['EditableText', EditableTextInspector],
-  ['EditableTextArea', EditableTextAreaInspector],
-])
+const enrichedRegistry = registry.map(enrichBuilderConfig)
 
-export const widgetInspectorRegistry = inspectorRegistry
-
-export const getWidgetInspector = (type: string) => {
-  const config = inspectorRegistry.get(type)
-  if (!config) {
-    return undefined
-  }
-  if (config.fields?.length) {
-    return config
-  }
-  if (!config.fieldKeys?.length) {
-    return config
-  }
-  const fields = resolveInspectorFields(config.fieldKeys, config.fieldOverrides)
-  return {
-    ...config,
-    fields,
-  }
-}
+export const widgetRegistry = [...enrichedRegistry]
 
 export const getWidgetDefinition = (type: string) => {
-  return registry.find((widget) => widget.type === type)
+  const resolvedType = normalizeWidgetType(type)
+  return (
+    enrichedRegistry.find((widget) => widget.type === resolvedType) ??
+    enrichedRegistry.find((widget) => widget.type.toLowerCase() === resolvedType.toLowerCase())
+  )
 }
 
 export const widgetCategories = Array.from(
-  registry.reduce((acc, widget) => {
+  enrichedRegistry.reduce((acc, widget) => {
     if (!acc.has(widget.category)) {
       acc.set(widget.category, [])
     }

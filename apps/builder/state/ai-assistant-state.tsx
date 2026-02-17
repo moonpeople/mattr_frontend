@@ -32,10 +32,23 @@ type ChatSession = {
   updatedAt: Date
 }
 
+export type BuilderAssistantContext = {
+  appId?: string
+  appName?: string
+  appUrl?: string
+  orgSlug?: string
+  activePage?: { id: string; name: string; url?: string }
+  pages?: { id: string; name: string; url?: string }[]
+  widgetSummary?: { total?: number; byType?: Record<string, number> }
+}
+
 export type AiAssistantContext = {
+  assistantMode?: 'platform' | 'builder'
+  storageKey?: string
   projectRef?: string
   orgSlug?: string
   connectionString?: string
+  builder?: BuilderAssistantContext
 }
 
 type AiAssistantData = {
@@ -228,12 +241,15 @@ function createChatInstance(
   state: AiAssistantState,
   options: { id: string; initialMessages: MessageType[] }
 ) {
+  const isBuilderAssistant = state.context.assistantMode === 'builder'
   return new Chat<MessageType>({
     id: options.id,
     messages: options.initialMessages.map((message) => sanitizeForCloning(message)),
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     transport: new DefaultChatTransport({
-      api: `${BASE_PATH}/api/ai/sql/generate-v4`,
+      api: isBuilderAssistant
+        ? `${BASE_PATH}/api/ai/builder/generate`
+        : `${BASE_PATH}/api/ai/sql/generate-v4`,
       async prepareSendMessagesRequest({ messages, ...opts }) {
         const cleanedMessages = prepareMessagesForAPI(messages)
         const headerData = await constructHeaders()
@@ -241,6 +257,20 @@ function createChatInstance(
 
         // Get the chat specific to this request to ensure we have the correct name
         const chat = state.chats[options.id]
+        if (isBuilderAssistant) {
+          return {
+            ...opts,
+            body: {
+              messages: cleanedMessages,
+              builderContext: state.context.builder,
+              orgSlug: state.context.orgSlug,
+              chatName: chat?.name,
+              model: state.model,
+              ...opts.body,
+            },
+            ...(IS_PLATFORM ? { headers: { Authorization: authorizationHeader ?? '' } } : {}),
+          }
+        }
 
         return {
           ...opts,
@@ -536,14 +566,16 @@ export const AiAssistantStateContextProvider = ({ children }: PropsWithChildren)
   const { data: project } = useSelectedProjectQuery()
   // Initialize state. createAiAssistantState now just sets defaults.
   const [state] = useState(() => createAiAssistantState())
+  const snap = useSnapshot(state)
+  const storageKey = snap.context.storageKey ?? project?.ref
 
   // Effect to load state from IndexedDB on mount or projectRef change
   useEffect(() => {
     let isMounted = true
 
     async function loadAndInitializeState() {
-      if (!project?.ref || typeof window === 'undefined') {
-        if (project?.ref === undefined) {
+      if (!storageKey || typeof window === 'undefined') {
+        if (storageKey === undefined) {
           state.resetAiAssistantPanel()
         }
         return // Don't load if no projectRef or not in browser
@@ -552,11 +584,11 @@ export const AiAssistantStateContextProvider = ({ children }: PropsWithChildren)
       let loadedState: StoredAiAssistantState | null = null
 
       // 1. Try loading from IndexedDB
-      loadedState = await loadFromIndexedDB(project?.ref)
+      loadedState = await loadFromIndexedDB(storageKey)
 
       // 2. If not in IndexedDB, try migrating from localStorage
       if (!loadedState) {
-        loadedState = await tryMigrateFromLocalStorage(project?.ref)
+        loadedState = await tryMigrateFromLocalStorage(storageKey)
       }
 
       if (!isMounted) return // Component unmounted during async operations
@@ -575,11 +607,11 @@ export const AiAssistantStateContextProvider = ({ children }: PropsWithChildren)
     return () => {
       isMounted = false
     }
-  }, [project?.ref, state])
+  }, [storageKey, state])
 
   // Effect to save state to IndexedDB on changes
   useEffect(() => {
-    if (typeof window !== 'undefined' && project?.ref) {
+    if (typeof window !== 'undefined' && storageKey) {
       // Create a debounced version of saveAiState
       const debouncedSaveAiState = debounce(saveAiState, 500)
 
@@ -587,7 +619,7 @@ export const AiAssistantStateContextProvider = ({ children }: PropsWithChildren)
         const snap = snapshot(state)
         // Prepare state for IndexedDB
         const stateToSave: StoredAiAssistantState = {
-          projectRef: project?.ref,
+          projectRef: storageKey,
           activeChatId: snap.activeChatId,
           model: snap.model,
           chats: snap.chats
@@ -612,7 +644,7 @@ export const AiAssistantStateContextProvider = ({ children }: PropsWithChildren)
       }
     }
     return undefined
-  }, [state, project?.ref])
+  }, [state, storageKey])
 
   return (
     <AiAssistantStateContext.Provider value={state}>{children}</AiAssistantStateContext.Provider>

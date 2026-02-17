@@ -6,8 +6,57 @@ import * as React from 'react'
 import { cn } from '../../../lib/utils/cn'
 import styles from './popover.module.css'
 
-const Popover = PopoverPrimitive.Root
-const PopoverTrigger = PopoverPrimitive.Trigger
+type PopoverPortalContextValue = {
+  container: HTMLElement | null
+  setContainer: (value: HTMLElement | null) => void
+}
+
+const PopoverPortalContext = React.createContext<PopoverPortalContextValue | null>(null)
+
+const Popover = ({ ...props }: React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Root>) => {
+  const [container, setContainer] = React.useState<HTMLElement | null>(null)
+  return (
+    <PopoverPortalContext.Provider value={{ container, setContainer }}>
+      <PopoverPrimitive.Root {...props} />
+    </PopoverPortalContext.Provider>
+  )
+}
+
+const PopoverTrigger = React.forwardRef<
+  React.ElementRef<typeof PopoverPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger>
+>(({ ...props }, ref) => {
+  const context = React.useContext(PopoverPortalContext)
+
+  const setRef = React.useCallback(
+    (node: React.ElementRef<typeof PopoverPrimitive.Trigger> | null) => {
+      if (typeof ref === 'function') {
+        ref(node)
+      } else if (ref) {
+        ;(ref as React.MutableRefObject<
+          React.ElementRef<typeof PopoverPrimitive.Trigger> | null
+        >).current = node
+      }
+
+      if (!context) {
+        return
+      }
+
+      if (!node) {
+        context.setContainer(null)
+        return
+      }
+
+      const scope = node.closest('.builder-app-theme-scope, .app-theme-scope')
+      context.setContainer((scope as HTMLElement | null) ?? node.ownerDocument?.body ?? null)
+    },
+    [context, ref]
+  )
+
+  return <PopoverPrimitive.Trigger ref={setRef} {...props} />
+})
+PopoverTrigger.displayName = PopoverPrimitive.Trigger.displayName
+
 const PopoverAnchor = PopoverPrimitive.Anchor
 
 type PopoverContentProps = {
@@ -20,8 +69,9 @@ const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   PopoverContentProps
 >(({ className, align = 'center', sideOffset = 4, sameWidthAsTrigger = false, ...props }, ref) => {
+  const context = React.useContext(PopoverPortalContext)
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal container={context?.container ?? undefined}>
       <PopoverPrimitive.Content
         ref={ref}
         align={align}

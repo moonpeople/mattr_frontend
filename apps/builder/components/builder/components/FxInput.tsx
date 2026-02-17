@@ -1,13 +1,28 @@
 import { useState, type ReactNode } from 'react'
 import { Code2, ExternalLink } from 'lucide-react'
 
-import type { WidgetField } from 'widgets'
+import type { WidgetField } from 'widgets/runtime'
 import CodeEditor, { type CodeEditorContentSize } from 'components/ui/CodeEditor/CodeEditor'
 
 type FxToggleButtonProps = {
   active: boolean
   onClick: () => void
 }
+
+const HOVER_FX_BOOLEAN_FIELDS = new Set([
+  'showClearButton',
+  'labelHide',
+  'labelWrap',
+  'showSeparators',
+  'showClear',
+  'showStepper',
+  'hideValidationMessage',
+  'showPasswordToggle',
+  'maintainSpaceWhenHidden',
+  'alwaysShowInEditMode',
+  'showOnDesktop',
+  'showOnMobile',
+])
 
 const FxToggleButton = ({ active, onClick }: FxToggleButtonProps) => {
   return (
@@ -108,6 +123,8 @@ type FxInputProps = {
     string,
     { kind?: string; detail?: string; documentation?: string; appendDot?: boolean }
   >
+  iconOptions?: { label: string; value: string }[]
+  renderIcon?: (value: string) => ReactNode
   hintExpression?: ReactNode
   hintTemplate?: ReactNode
 }
@@ -131,25 +148,169 @@ export const FxInput = ({
   fxEvalContext,
   fxCompletionWords,
   fxCompletionMetadata,
+  iconOptions,
+  renderIcon,
   hintExpression,
   hintTemplate,
 }: FxInputProps) => {
-  const useCheckboxStyle =
-    field.type === 'boolean' &&
-    ['showClearButton', 'labelHide', 'labelWrap'].includes(field.key)
-
+  const customSuggestions = {
+    enabled: true,
+    context: fxEvalContext,
+    iconOptions,
+    renderIcon,
+  }
   if (field.type === 'boolean') {
-    if (isFxActive) {
-      const showToggle = Boolean(onToggleFxMode)
+    const showToggle = Boolean(onToggleFxMode)
+    const useHoverFxLayout = HOVER_FX_BOOLEAN_FIELDS.has(field.key)
+
+    if (useHoverFxLayout) {
+      if (isFxActive) {
+        if (!showToggle) {
+          return (
+            <div
+              className="flex h-6 w-full items-center overflow-hidden rounded-md border border-foreground-muted/30 bg-surface-100 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500/40"
+              onKeyDown={(event) => {
+                if (event.key === 'Backspace' || event.key === 'Delete') {
+                  event.stopPropagation()
+                }
+              }}
+            >
+              <CodeEditor
+                id={`${editorId}-inline`}
+                language="javascript"
+                value={typeof value === 'string' ? value : String(value ?? '')}
+                onInputChange={(nextValue) =>
+                  onChange({ [field.key]: nextValue ?? '' })
+                }
+                autofocus={false}
+                className="h-[18px] w-full"
+                hideLineNumbers
+                highlightOnlyFx={false}
+                options={{
+                  minimap: { enabled: false },
+                  wordWrap: 'off',
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  quickSuggestions: false,
+                  suggestOnTriggerCharacters: false,
+                  wordBasedSuggestions: 'off',
+                  tabCompletion: 'on',
+                  fontSize: 12,
+                  lineHeight: 18,
+                  lineNumbers: 'off',
+                  glyphMargin: false,
+                  lineNumbersMinChars: 0,
+                  lineDecorationsWidth: 4,
+                  folding: false,
+                  renderLineHighlight: 'none',
+                  overviewRulerLanes: 0,
+                  hideCursorInOverviewRuler: true,
+                  overviewRulerBorder: false,
+                  scrollbar: {
+                    vertical: 'hidden',
+                    horizontal: 'hidden',
+                    verticalScrollbarSize: 0,
+                    horizontalScrollbarSize: 0,
+                  },
+                  padding: { top: 0, bottom: 0 },
+                }}
+                extraLibs={fxEditorLibs}
+                disableTopPadding
+                insertNewlineOnCtrlEnter
+                autoTriggerSuggestions
+                completionWords={fxCompletionWords}
+                completionMetadata={fxCompletionMetadata}
+                customSuggestions={customSuggestions}
+              />
+            </div>
+          )
+        }
+
+        return (
+          <div
+            className="flex h-6 w-full items-center overflow-hidden rounded-md border border-foreground-muted/30 bg-surface-100 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500/40"
+            onKeyDown={(event) => {
+              if (event.key === 'Backspace' || event.key === 'Delete') {
+                event.stopPropagation()
+              }
+            }}
+          >
+            <CodeEditor
+              id={`${editorId}-inline`}
+              language="javascript"
+              value={typeof value === 'string' ? value : String(value ?? '')}
+              onInputChange={(nextValue) =>
+                onChange({ [field.key]: nextValue ?? '' })
+              }
+              autofocus={false}
+              className="h-[18px] w-full"
+              hideLineNumbers
+              highlightOnlyFx={false}
+              options={{
+                minimap: { enabled: false },
+                wordWrap: 'off',
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                quickSuggestions: false,
+                suggestOnTriggerCharacters: false,
+                wordBasedSuggestions: 'off',
+                tabCompletion: 'on',
+                fontSize: 12,
+                lineHeight: 18,
+                lineNumbers: 'off',
+                glyphMargin: false,
+                lineNumbersMinChars: 0,
+                lineDecorationsWidth: 4,
+                folding: false,
+                renderLineHighlight: 'none',
+                overviewRulerLanes: 0,
+                hideCursorInOverviewRuler: true,
+                overviewRulerBorder: false,
+                scrollbar: {
+                  vertical: 'hidden',
+                  horizontal: 'hidden',
+                  verticalScrollbarSize: 0,
+                  horizontalScrollbarSize: 0,
+                },
+                padding: { top: 0, bottom: 0 },
+              }}
+              extraLibs={fxEditorLibs}
+              disableTopPadding
+              insertNewlineOnCtrlEnter
+              autoTriggerSuggestions
+                completionWords={fxCompletionWords}
+                completionMetadata={fxCompletionMetadata}
+                customSuggestions={customSuggestions}
+              />
+            </div>
+          )
+        }
+
       return (
-        <div className={`flex items-center ${showToggle ? 'gap-2' : ''}`}>
-          {showToggle && (
+        <div className="flex items-center justify-end">
+          <div className="flex items-center gap-2">
+            {showToggle && (
+              <div className="pointer-events-none opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                <FxToggleButton active={false} onClick={() => onToggleFxMode?.(field, value)} />
+              </div>
+            )}
+            {control}
+          </div>
+        </div>
+      )
+    }
+
+    if (isFxActive) {
+      const showToggleInline = Boolean(onToggleFxMode)
+      return (
+        <div className={`flex items-center ${showToggleInline ? 'gap-2' : ''}`}>
+          {showToggleInline && (
             <FxToggleButton
               active
               onClick={() => onToggleFxMode?.(field, value)}
             />
           )}
-          <div className={`${showToggle ? 'min-w-0 flex-1' : 'w-full'}`}>
+          <div className={`${showToggleInline ? 'min-w-0 flex-1' : 'w-full'}`}>
             <InlineFxControl
               control={
                 <div
@@ -178,7 +339,7 @@ export const FxInput = ({
                       automaticLayout: true,
                       quickSuggestions: false,
                       suggestOnTriggerCharacters: false,
-                      wordBasedSuggestions: false,
+                      wordBasedSuggestions: 'off',
                       tabCompletion: 'on',
                       fontSize: 12,
                       lineHeight: 18,
@@ -220,7 +381,7 @@ export const FxInput = ({
       )
     }
 
-    const swapOrder = useCheckboxStyle
+    const swapOrder = ['showClearButton', 'labelHide', 'labelWrap'].includes(field.key)
     return (
       <div
         className={`flex items-center gap-2 ${
@@ -246,6 +407,71 @@ export const FxInput = ({
         )}
       </div>
     )
+  }
+
+  if (field.type === 'select') {
+    if (isFxActive) {
+      return (
+        <div
+          className="flex h-6 w-full items-center overflow-hidden rounded-md border border-foreground-muted/30 bg-surface-100 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500/40"
+          onKeyDown={(event) => {
+            if (event.key === 'Backspace' || event.key === 'Delete') {
+              event.stopPropagation()
+            }
+          }}
+        >
+          <CodeEditor
+            id={`${editorId}-inline`}
+            language="javascript"
+            value={typeof value === 'string' ? value : String(value ?? '')}
+            onInputChange={(nextValue) =>
+              onChange({ [field.key]: nextValue ?? '' })
+            }
+            autofocus={false}
+            className="h-[18px] w-full"
+            hideLineNumbers
+            highlightOnlyFx={false}
+            options={{
+              minimap: { enabled: false },
+              wordWrap: 'off',
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+              quickSuggestions: false,
+              suggestOnTriggerCharacters: false,
+              wordBasedSuggestions: 'off',
+              tabCompletion: 'on',
+              fontSize: 12,
+              lineHeight: 18,
+              lineNumbers: 'off',
+              glyphMargin: false,
+              lineNumbersMinChars: 0,
+              lineDecorationsWidth: 4,
+              folding: false,
+              renderLineHighlight: 'none',
+              overviewRulerLanes: 0,
+              hideCursorInOverviewRuler: true,
+              overviewRulerBorder: false,
+              scrollbar: {
+                vertical: 'hidden',
+                horizontal: 'hidden',
+                verticalScrollbarSize: 0,
+                horizontalScrollbarSize: 0,
+              },
+              padding: { top: 0, bottom: 0 },
+            }}
+            extraLibs={fxEditorLibs}
+            disableTopPadding
+            insertNewlineOnCtrlEnter
+            autoTriggerSuggestions
+            completionWords={fxCompletionWords}
+            completionMetadata={fxCompletionMetadata}
+            customSuggestions={customSuggestions}
+          />
+        </div>
+      )
+    }
+
+    return control
   }
 
   if (isInlineCodeEditorField) {
@@ -284,7 +510,7 @@ export const FxInput = ({
                 automaticLayout: true,
                 quickSuggestions: false,
                 suggestOnTriggerCharacters: false,
-                wordBasedSuggestions: false,
+                wordBasedSuggestions: 'off',
                 tabCompletion: 'on',
                 fontSize: 12,
                 lineHeight: 18,
@@ -309,12 +535,12 @@ export const FxInput = ({
               disableTopPadding
               insertNewlineOnCtrlEnter
               autoTriggerSuggestions
-              completionWords={fxCompletionWords}
-              completionMetadata={fxCompletionMetadata}
-              customSuggestions={{ enabled: true, context: fxEvalContext }}
-            />
-          </div>
-        }
+                completionWords={fxCompletionWords}
+                completionMetadata={fxCompletionMetadata}
+                customSuggestions={customSuggestions}
+              />
+            </div>
+          }
         isFxEnabled={isFxActive}
         isMultiline={false}
         onFxClick={onFxClick}
@@ -338,7 +564,7 @@ export const FxInput = ({
 
   return (
     <div className={`flex gap-2 ${isMultiline ? 'items-start' : 'items-center'}`}>
-      <div className={`min-w-0 flex-1 ${field.type === 'boolean' ? 'flex justify-end' : ''}`}>
+      <div className="min-w-0 flex-1">
         {control}
       </div>
       <div className={isMultiline ? 'mt-1' : ''}>

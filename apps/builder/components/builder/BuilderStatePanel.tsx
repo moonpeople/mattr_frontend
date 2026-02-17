@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Globe, List, Menu, Monitor, Palette, RefreshCw, Search, User, X } from 'lucide-react'
+import { Globe, List, Menu, Monitor, Palette, RefreshCw, Search, User, X, type LucideIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { JSONTree } from 'react-json-tree'
 
 import { useUser } from 'common'
-import type { WidgetDefinition, WidgetField } from 'widgets'
+import { getWidgetInspector } from 'widgets/inspector'
+import type { WidgetDefinition, WidgetField } from 'widgets/runtime'
 import {
   Button,
   Input,
@@ -21,15 +22,21 @@ import {
 import type { BuilderQuery } from 'data/builder/builder-queries'
 import type { BuilderJsFunction } from 'data/builder/builder-js'
 import { stripTransformerMeta } from './BuilderCodeUtils'
-import type { BuilderPage, BuilderQueryRunResult, BuilderWidgetInstance } from './types'
-import { resolveWidgetSpacingModes } from './types'
+import type {
+  BuilderPage,
+  BuilderQueryRunResult,
+  BuilderSelectedNode,
+  BuilderWidgetInstance,
+} from './types'
+import { getPageFrameWidgets, resolveWidgetSpacingModes } from './types'
 import { isPlainObject } from './BuilderCodeUtils'
+import { buildSelfContext } from './self-context'
 import { resolveValue } from 'lib/builder/value-resolver'
 import { inferValueKind, parseValueTypeTokens } from './components'
 
 // Panel sostoyaniya: pokazyvaet state vidzhetov, app i environment.
 
-type IconComponent = (props: { size?: number; className?: string }) => JSX.Element
+type IconComponent = LucideIcon
 
 type StateTarget = {
   id: string
@@ -46,15 +53,13 @@ type BuilderStatePanelProps = {
   onClose?: () => void
   activePage: BuilderPage | null
   pages: BuilderPage[]
-  globalWidgets: BuilderWidgetInstance[]
-  pageGlobals: BuilderWidgetInstance[]
+  appFrameWidgets: BuilderWidgetInstance[]
+  pageFrameWidgets: BuilderWidgetInstance[]
   widgets: WidgetDefinition[]
   queries: BuilderQuery[]
   jsFunctions: BuilderJsFunction[]
   queryRuns: Record<string, BuilderQueryRunResult>
-  selectedWidgetId?: string | null
-  selectedGlobalWidgetId?: string | null
-  selectedPageComponent?: boolean
+  selectedNode?: BuilderSelectedNode | null
 }
 
 const categoryLabels: Record<string, string> = {
@@ -357,6 +362,12 @@ const flattenWidgets = (widgets: BuilderWidgetInstance[]) => {
   return result
 }
 
+const resolvePageWidgets = (page: BuilderPage | null | undefined): BuilderWidgetInstance[] =>
+  page?.pageLayout.widgets ?? []
+
+const resolvePageFrameWidgets = (page: BuilderPage | null | undefined): BuilderWidgetInstance[] =>
+  page?.pageLayout.frames ? getPageFrameWidgets(page.pageLayout.frames) : []
+
 // Sobiraet state widgeta s propami i spacing.
 const buildWidgetState = (
   widget: BuilderWidgetInstance,
@@ -368,7 +379,7 @@ const buildWidgetState = (
   const margin = spacing.marginMode === 'none' ? '0px' : '4px 8px'
   const defaultProps = definition?.defaultProps ?? {}
   const resolvedHidden = resolveValue(widget.hidden, context ?? {})
-  return {
+  const state = {
     id: widget.id,
     type: widget.type,
     ...defaultProps,
@@ -380,6 +391,9 @@ const buildWidgetState = (
     heightType: spacing.heightMode,
     margin,
   }
+  return Object.fromEntries(
+    Object.entries(state).filter(([key]) => !key.startsWith('_'))
+  )
 }
 
 const resolveWidgetPropsForState = (
@@ -387,14 +401,21 @@ const resolveWidgetPropsForState = (
   definition: WidgetDefinition | undefined,
   context: Record<string, unknown>
 ) => {
-  const fields = definition?.fields ?? []
+  const inspectorConfig = definition ? getWidgetInspector(definition.type) : undefined
+  const fields = inspectorConfig?.fields ?? definition?.fields ?? []
   if (fields.length === 0) {
     return {}
   }
-  const props = widget.props ?? {}
+  const props = {
+    ...(definition?.defaultProps ?? {}),
+    ...(widget.props ?? {}),
+  }
   const resolvedProps: Record<string, unknown> = {}
   fields.forEach((field) => {
     if (!field?.key) {
+      return
+    }
+    if (field.key.startsWith('_')) {
       return
     }
     if (!(field.key in props)) {
@@ -470,15 +491,13 @@ export const BuilderStatePanel = ({
   onClose,
   activePage,
   pages,
-  globalWidgets,
-  pageGlobals,
+  appFrameWidgets,
+  pageFrameWidgets,
   widgets,
   queries,
   jsFunctions,
   queryRuns,
-  selectedWidgetId,
-  selectedGlobalWidgetId,
-  selectedPageComponent,
+  selectedNode,
 }: BuilderStatePanelProps) => {
   const user = useUser()
   const { resolvedTheme } = useTheme()
@@ -489,14 +508,16 @@ export const BuilderStatePanel = ({
   const [refreshToken, setRefreshToken] = useState(0)
   const [viewport, setViewport] = useState({ width: 0, height: 0 })
   const lastSelectionRef = useRef<{
+    kind: BuilderSelectedNode['kind'] | null
     widgetId: string | null
-    globalWidgetId: string | null
-    pageComponent: boolean
+    frameWidgetId: string | null
+    pageMain: boolean
     pageId: string | null
   }>({
+    kind: null,
     widgetId: null,
-    globalWidgetId: null,
-    pageComponent: false,
+    frameWidgetId: null,
+    pageMain: false,
     pageId: null,
   })
 
@@ -530,14 +551,14 @@ export const BuilderStatePanel = ({
       }
     }
 
-    addWidgets(flattenWidgets(globalWidgets))
-    addWidgets(flattenWidgets(pageGlobals))
-    addWidgets(pages.flatMap((page) => flattenWidgets(page.pageGlobals ?? [])))
-    addWidgets(pages.flatMap((page) => flattenWidgets(page.widgets ?? [])))
-    addWidgets(flattenWidgets(activePage?.widgets ?? []))
+    addWidgets(flattenWidgets(appFrameWidgets))
+    addWidgets(flattenWidgets(pageFrameWidgets))
+    addWidgets(pages.flatMap((page) => flattenWidgets(resolvePageFrameWidgets(page))))
+    addWidgets(pages.flatMap((page) => flattenWidgets(resolvePageWidgets(page))))
+    addWidgets(flattenWidgets(resolvePageWidgets(activePage)))
 
     return merged
-  }, [activePage?.widgets, globalWidgets, pageGlobals, pages])
+  }, [activePage, appFrameWidgets, pageFrameWidgets, pages])
 
   const globalTargets = useMemo<StateTarget[]>(() => {
     const runningQueries = queries
@@ -772,7 +793,17 @@ export const BuilderStatePanel = ({
   const componentTargets = useMemo<StateTarget[]>(() => {
     return allWidgets.map((widget) => {
       const definition = widgetDefinitionMap.get(widget.type)
-      const resolvedProps = resolveWidgetPropsForState(widget, definition, fxEvalContext)
+      const spacing = resolveWidgetSpacingModes(widget.type, widget.spacing)
+      const widgetContext = {
+        ...fxEvalContext,
+        self: buildSelfContext({
+          widget,
+          definition,
+          spacing,
+          widgetValues: widgetValueMap,
+        }),
+      }
+      const resolvedProps = resolveWidgetPropsForState(widget, definition, widgetContext)
       const category = definition?.category ?? 'inputs'
       return {
         id: `component.${widget.id}`,
@@ -780,10 +811,10 @@ export const BuilderStatePanel = ({
         description: definition?.label ?? widget.type,
         group: categoryLabels[category] ?? 'Components',
         icon: getWidgetIcon(widget.type),
-        state: buildWidgetState(widget, definition, resolvedProps, fxEvalContext),
+        state: buildWidgetState(widget, definition, resolvedProps, widgetContext),
       }
     })
-  }, [allWidgets, fxEvalContext, widgetDefinitionMap])
+  }, [allWidgets, fxEvalContext, widgetDefinitionMap, widgetValueMap])
 
   const allTargets = useMemo(() => {
     return [
@@ -796,26 +827,79 @@ export const BuilderStatePanel = ({
   }, [componentTargets, globalTargets, pageTargets, queryTargets, transformerTargets])
 
   useEffect(() => {
-    const nextSelection = {
-      widgetId: selectedWidgetId ?? null,
-      globalWidgetId: selectedGlobalWidgetId ?? null,
-      pageComponent: Boolean(selectedPageComponent),
-      pageId: activePage?.id ?? null,
-    }
+    const nextSelection = (() => {
+      if (!selectedNode) {
+        return {
+          kind: null,
+          widgetId: null,
+          frameWidgetId: null,
+          pageMain: false,
+          pageId: activePage?.id ?? null,
+        }
+      }
+      switch (selectedNode.kind) {
+        case 'app':
+          return {
+            kind: selectedNode.kind,
+            widgetId: null,
+            frameWidgetId: null,
+            pageMain: false,
+            pageId: activePage?.id ?? null,
+          }
+        case 'page':
+          return {
+            kind: selectedNode.kind,
+            widgetId: null,
+            frameWidgetId: null,
+            pageMain: false,
+            pageId: selectedNode.pageId,
+          }
+        case 'main':
+          return {
+            kind: selectedNode.kind,
+            widgetId: null,
+            frameWidgetId: null,
+            pageMain: true,
+            pageId: selectedNode.pageId,
+          }
+        case 'frame':
+          return {
+            kind: selectedNode.kind,
+            widgetId: null,
+            frameWidgetId: selectedNode.frameId,
+            pageMain: false,
+            pageId: selectedNode.pageId,
+          }
+        case 'widget':
+          return {
+            kind: selectedNode.kind,
+            widgetId: selectedNode.scope === 'main' ? selectedNode.widgetId : null,
+            frameWidgetId: selectedNode.scope === 'main' ? null : selectedNode.widgetId,
+            pageMain: false,
+            pageId: selectedNode.pageId,
+          }
+      }
+    })()
     const prevSelection = lastSelectionRef.current
     const selectionChanged =
+      prevSelection.kind !== nextSelection.kind ||
       prevSelection.widgetId !== nextSelection.widgetId ||
-      prevSelection.globalWidgetId !== nextSelection.globalWidgetId ||
-      prevSelection.pageComponent !== nextSelection.pageComponent ||
+      prevSelection.frameWidgetId !== nextSelection.frameWidgetId ||
+      prevSelection.pageMain !== nextSelection.pageMain ||
       prevSelection.pageId !== nextSelection.pageId
 
     if (selectionChanged) {
-      if (nextSelection.globalWidgetId) {
-        setActiveTargetId(`component.${nextSelection.globalWidgetId}`)
+      if (nextSelection.frameWidgetId) {
+        setActiveTargetId(`component.${nextSelection.frameWidgetId}`)
       } else if (nextSelection.widgetId) {
         setActiveTargetId(`component.${nextSelection.widgetId}`)
-      } else if (nextSelection.pageComponent && nextSelection.pageId) {
+      } else if (
+        (nextSelection.kind === 'page' || nextSelection.kind === 'main') &&
+        nextSelection.pageId
+      ) {
         setActiveTargetId(`page.${nextSelection.pageId}`)
+      } else if (nextSelection.kind === 'app') {
+        setActiveTargetId('global.retoolContext')
       }
     } else if (!activeTargetId && allTargets.length > 0) {
       setActiveTargetId(allTargets[0].id)
@@ -823,9 +907,7 @@ export const BuilderStatePanel = ({
 
     lastSelectionRef.current = nextSelection
   }, [
-    selectedGlobalWidgetId,
-    selectedWidgetId,
-    selectedPageComponent,
+    selectedNode,
     activePage?.id,
     activeTargetId,
     allTargets,

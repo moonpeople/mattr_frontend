@@ -1,4 +1,4 @@
-import type { WidgetField } from 'widgets'
+import type { WidgetField } from 'widgets/runtime'
 
 const FX_BASE_CONTEXT = {
   state: {},
@@ -137,14 +137,36 @@ const normalizeValueTypeToken = (token: string) => {
   return normalized
 }
 
-const parseValueTypeTokens = (valueType?: string) => {
+const parseValueTypeTokens = (valueType?: string | string[]) => {
   if (!valueType) {
     return []
   }
-  return valueType
-    .split(/[|/]/)
-    .map((token) => normalizeValueTypeToken(token))
+  const tokens = Array.isArray(valueType)
+    ? valueType
+    : valueType.split(/[|/,]/)
+  return tokens
+    .map((token) => normalizeValueTypeToken(String(token)))
     .filter((token): token is string => Boolean(token))
+}
+
+const formatValueTypeLabel = (valueType?: string | string[]) => {
+  if (!valueType) {
+    return undefined
+  }
+  const tokens = parseValueTypeTokens(valueType)
+  if (tokens.length === 0) {
+    return typeof valueType === 'string' ? valueType : undefined
+  }
+  const labels = tokens.map((token) => {
+    if (token === 'undefined') {
+      return 'Void'
+    }
+    if (token === 'null') {
+      return 'Null'
+    }
+    return `${token.charAt(0).toUpperCase()}${token.slice(1)}`
+  })
+  return labels.join(' | ')
 }
 
 const inferValueKind = (value: unknown) => {
@@ -330,7 +352,7 @@ const buildFxEditorLibs = ({
 }
 
 const getValueTypeLabel = (field: WidgetField) =>
-  field.valueType ?? FX_VALUE_TYPE_FALLBACKS[field.type]
+  formatValueTypeLabel(field.valueType ?? FX_VALUE_TYPE_FALLBACKS[field.type])
 
 export {
   FX_BASE_CONTEXT,
@@ -342,4 +364,5 @@ export {
   buildCompletionMetadata,
   buildFxEditorLibs,
   getValueTypeLabel,
+  formatValueTypeLabel,
 }

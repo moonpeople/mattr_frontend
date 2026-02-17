@@ -70,7 +70,9 @@ export const buildIndexedName = (prefix: string, existing: Set<string>) => {
 
 const TRANSFORMER_META_PREFIX = '// @mattr-transformer '
 
-export const parseTransformerMeta = (code: string) => {
+export const parseTransformerMeta = (
+  code: string
+): { meta: { scope: BuilderCodeScope; pageId?: string }; body: string } => {
   if (!code) {
     return { meta: { scope: 'global' as const }, body: '' }
   }

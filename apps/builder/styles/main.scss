@@ -268,13 +268,51 @@ div[data-radix-portal]:not(.portal--toast) {
   @apply mx-auto max-w-4xl xl:max-w-6xl;
 }
 
-.react-grid-item.react-grid-placeholder {
-  @apply bg-brand-500;
+.builder-shell .react-grid-item.react-grid-placeholder {
+  background-color: hsl(var(--brand-500) / 0.45) !important;
+  border: 1px dashed hsl(var(--brand-500) / 0.9) !important;
+  box-shadow: 0 0 0 1px hsl(var(--brand-500) / 0.35) inset;
+}
+
+.builder-shell .react-grid-item.react-draggable-dragging {
+  z-index: 1200 !important;
+  pointer-events: none !important;
+}
+
+.builder-shell .builder-canvas.builder-canvas--internal-drag .react-grid-item.react-grid-placeholder {
+  opacity: 0 !important;
 }
 
 .builder-shell {
   --builder-grid-line: hsl(var(--border-default) / 0.35);
   --builder-grid-line-muted: hsl(var(--border-default) / 0.2);
+  --builder-background-default: var(--background-default);
+  --builder-background-surface-100: var(--background-surface-100);
+  --builder-background-surface-200: var(--background-surface-200);
+  --builder-background-surface-300: var(--background-surface-300);
+  --builder-foreground-default: var(--foreground-default);
+  --builder-foreground-muted: var(--foreground-muted);
+  --builder-border-default: var(--border-default);
+  --builder-border-muted: var(--border-muted);
+  --builder-brand-default: var(--brand-default);
+  --builder-brand-500: var(--brand-500);
+  --builder-brand-600: var(--brand-600);
+  --builder-brand-link: var(--brand-link);
+}
+
+.builder-chrome {
+  --background-default: var(--builder-background-default);
+  --background-surface-100: var(--builder-background-surface-100);
+  --background-surface-200: var(--builder-background-surface-200);
+  --background-surface-300: var(--builder-background-surface-300);
+  --foreground-default: var(--builder-foreground-default);
+  --foreground-muted: var(--builder-foreground-muted);
+  --border-default: var(--builder-border-default);
+  --border-muted: var(--builder-border-muted);
+  --brand-default: var(--builder-brand-default);
+  --brand-500: var(--builder-brand-500);
+  --brand-600: var(--builder-brand-600);
+  --brand-link: var(--builder-brand-link);
 }
 
 .builder-shell .builder-panel {

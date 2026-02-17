@@ -12,6 +12,42 @@ Object.values(color).map((x, i) => {
   colorExtend[Object.keys(color)[i]] = `hsl(${x.cssVariable} / <alpha-value>)` // x.cssVariable
 })
 
+const appSpacing = {
+  '0.5': 'var(--app-space-0-5, 0.125rem)',
+  '1': 'var(--app-space-1, 0.25rem)',
+  '1.5': 'var(--app-space-1-5, 0.375rem)',
+  '2': 'var(--app-space-2, 0.5rem)',
+  '2.5': 'var(--app-space-2-5, 0.625rem)',
+  '3': 'var(--app-space-3, 0.75rem)',
+  '3.5': 'var(--app-space-3-5, 0.875rem)',
+  '4': 'var(--app-space-4, 1rem)',
+  '5': 'var(--app-space-5, 1.25rem)',
+  '6': 'var(--app-space-6, 1.5rem)',
+  '7': 'var(--app-space-7, 1.75rem)',
+  '8': 'var(--app-space-8, 2rem)',
+  '9': 'var(--app-space-9, 2.25rem)',
+  '10': 'var(--app-space-10, 2.5rem)',
+  '11': 'var(--app-space-11, 2.75rem)',
+  '12': 'var(--app-space-12, 3rem)',
+  '14': 'var(--app-space-14, 3.5rem)',
+  '16': 'var(--app-space-16, 4rem)',
+  '20': 'var(--app-space-20, 5rem)',
+  '24': 'var(--app-space-24, 6rem)',
+  '28': 'var(--app-space-28, 7rem)',
+  '32': 'var(--app-space-32, 8rem)',
+  '36': 'var(--app-space-36, 9rem)',
+  '40': 'var(--app-space-40, 10rem)',
+  '44': 'var(--app-space-44, 11rem)',
+  '48': 'var(--app-space-48, 12rem)',
+  '52': 'var(--app-space-52, 13rem)',
+  '56': 'var(--app-space-56, 14rem)',
+  '60': 'var(--app-space-60, 15rem)',
+  '64': 'var(--app-space-64, 16rem)',
+  '72': 'var(--app-space-72, 18rem)',
+  '80': 'var(--app-space-80, 20rem)',
+  '96': 'var(--app-space-96, 24rem)',
+}
+
 // console.log('colorExtend', colorExtend)
 // console.log('colorExtend kebabToNested', kebabToNested(colorExtend))
 
@@ -406,11 +442,24 @@ const uiConfig = ui({
         'collapsible-down': 'collapsible-down 0.10s ease-out',
         'collapsible-up': 'collapsible-up 0.10s ease-out',
       },
+      spacing: {
+        ...appSpacing,
+      },
       borderRadius: {
-        // lg: `var(--radius)`,
-        // md: `calc(var(--radius) - 2px)`,
-        // sm: 'calc(var(--radius) - 4px)',
+        sm: 'var(--app-radius-sm, 0.125rem)',
+        DEFAULT: 'var(--app-radius-md, 0.25rem)',
+        md: 'var(--app-radius-md, 0.375rem)',
+        lg: 'var(--app-radius-lg, 0.5rem)',
+        xl: 'var(--app-radius-xl, 0.75rem)',
+        '2xl': 'var(--app-radius-xl, 1rem)',
+        '3xl': 'var(--app-radius-xl, 1.5rem)',
         panel: '6px',
+      },
+      boxShadow: {
+        xs: 'var(--app-shadow-xs, 0 1px 1px 0 rgb(0 0 0 / 0.05))',
+        sm: 'var(--app-shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05))',
+        md: 'var(--app-shadow-md, 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1))',
+        lg: 'var(--app-shadow-lg, 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1))',
       },
       padding: {
         content: '21px',

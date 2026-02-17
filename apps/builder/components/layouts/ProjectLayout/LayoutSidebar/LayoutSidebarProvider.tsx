@@ -33,7 +33,10 @@ export const LayoutSidebarProvider = ({ children }: PropsWithChildren) => {
   const sidebarURLParamRef = useLatest(sidebarURLParam)
   const sidebarLocalStorageRef = useLatest(sidebarLocalStorage)
 
-  useRegisterSidebar(SIDEBAR_KEYS.AI_ASSISTANT, () => <AIAssistant />, {}, 'i', !!project)
+  const isBuilderRoute = router.pathname === '/builder' || router.pathname.startsWith('/builder/')
+  const canUseAssistant = !!project || isBuilderRoute
+
+  useRegisterSidebar(SIDEBAR_KEYS.AI_ASSISTANT, () => <AIAssistant />, {}, 'i', canUseAssistant)
   useRegisterSidebar(SIDEBAR_KEYS.EDITOR_PANEL, () => <EditorPanel />, {}, 'e', !!project)
   useRegisterSidebar(SIDEBAR_KEYS.ADVISOR_PANEL, () => <AdvisorPanel />, {}, undefined, true)
 

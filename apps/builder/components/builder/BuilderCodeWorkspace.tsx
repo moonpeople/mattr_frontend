@@ -43,7 +43,7 @@ import { IS_PLATFORM } from 'lib/constants'
 import { runBuilderQuery } from 'lib/builder/query-runner'
 
 import type { BuilderPage, BuilderQueryRunResult } from './types'
-import { BuilderEventHandlers } from './BuilderEventHandlers'
+import { BuilderEventHandlers } from './inspector'
 import CodeEditor from 'components/ui/CodeEditor/CodeEditor'
 import {
   type BuilderCodeSelection,
@@ -490,7 +490,7 @@ export const BuilderCodeWorkspace = ({
   }, [activePageId, pages, transformerPageId, transformerScope])
 
   const saveQuery = async () => {
-    if (!selectedQuery) {
+    if (!selectedQuery || !appId) {
       return
     }
     if (nameError) {

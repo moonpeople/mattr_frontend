@@ -17,6 +17,10 @@ import 'styles/ui.scss'
 import 'ui-patterns/ShimmeringLoader/index.css'
 import 'ui/build/css/themes/dark.css'
 import 'ui/build/css/themes/light.css'
+import '@fontsource-variable/open-sans'
+import '@fontsource-variable/roboto'
+import '@fontsource-variable/noto-sans'
+import '@fontsource-variable/raleway'
 
 import { loader } from '@monaco-editor/react'
 import * as Sentry from '@sentry/nextjs'
@@ -85,6 +89,24 @@ loader.config({
   },
 })
 
+if (typeof window !== 'undefined') {
+  const resolvedBaseUrl = new URL(`${monacoBasePath.replace(/\/+$/, '')}/`, window.location.href)
+    .toString()
+    .replace(/\/$/, '')
+  const workerMainUrl = `${resolvedBaseUrl}/base/worker/workerMain.js`
+
+  ;(window as any).MonacoEnvironment = {
+    getWorkerUrl: () => {
+      const workerSource = `
+        self.MonacoEnvironment = { baseUrl: ${JSON.stringify(`${resolvedBaseUrl}/`)} };
+        self.require = { paths: { vs: ${JSON.stringify(resolvedBaseUrl)} } };
+        importScripts(${JSON.stringify(workerMainUrl)});
+      `
+      return `data:text/javascript;charset=utf-8,${encodeURIComponent(workerSource)}`
+    },
+  }
+}
+
 // [Joshen TODO] Once we settle on the new nav layout - we'll need a lot of clean up in terms of our layout components
 // a lot of them are unnecessary and introduce way too many cluttered CSS especially with the height styles that make
 // debugging way too difficult. Ideal scenario is we just have one AppLayout to control the height and scroll areas of
@@ -144,7 +166,7 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
                       {/* [Alaister]: This has to be an inline style tag here and not a separate component due to next/font */}
                       <style
                         dangerouslySetInnerHTML={{
-                          __html: `:root{--font-custom:${customFont.style.fontFamily};--font-source-code-pro:${sourceCodePro.style.fontFamily};}`,
+                          __html: `:root{--font-custom:${customFont.style.fontFamily};--font-source-code-pro:${sourceCodePro.style.fontFamily};--font-inter:${customFont.style.fontFamily};--font-open-sans:"Open Sans Variable","Open Sans",sans-serif;--font-roboto:"Roboto Variable","Roboto",sans-serif;--font-noto-sans:"Noto Sans Variable","Noto Sans",sans-serif;--font-raleway:"Raleway Variable","Raleway",sans-serif;}`,
                         }}
                       />
                       {/* Speed up initial API loading times by pre-connecting to the API domain */}

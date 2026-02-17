@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Activity, Code2, History, LayoutGrid, Layers, ListTree, Search, Settings } from 'lucide-react'
 
-import type { WidgetDefinition } from 'widgets'
+import type { WidgetDefinition } from 'widgets/runtime'
 
 import { BuilderStatePanel } from './BuilderStatePanel'
 import { BuilderSidebarPanelComponents } from './BuilderSidebarPanelComponents'
@@ -18,7 +18,9 @@ import type { BuilderCodeItemType, BuilderCodeSelection } from './BuilderCodeUti
 import type {
   BuilderPage,
   BuilderQueryRunResult,
+  BuilderSelectedNode,
   BuilderSection,
+  BuilderWidgetAddOptions,
   BuilderWidgetInstance,
 } from './types'
 
@@ -44,34 +46,33 @@ interface BuilderSidebarProps {
   projectRef?: string
   projectRestUrl?: string | null
   activeSection: BuilderSection
-  globalWidgets?: BuilderWidgetInstance[]
-  pageGlobals?: BuilderWidgetInstance[]
-  onAddGlobalWidget?: (type: string) => void
-  onAddPageGlobalWidget?: (type: string) => void
+  appFrameWidgets?: BuilderWidgetInstance[]
+  pageFrameWidgets?: BuilderWidgetInstance[]
+  onAddAppFrameWidget?: (type: string) => void
+  onAddPageFrameWidget?: (type: string) => void
   pages: BuilderPage[]
   activePageId: string
   rootScreenId?: string | null
   onSetRootScreen?: (pageId: string) => void
-  selectedWidgetId?: string | null
-  selectedGlobalWidgetId?: string | null
-  selectedPageComponent?: boolean
+  selectedNode?: BuilderSelectedNode | null
   onSelectPage: (pageId: string) => void
   onSelectWidget?: (widgetId: string) => void
-  onSelectGlobalWidget?: (widgetId: string) => void
-  onSelectPageComponent?: () => void
-  onToggleWidgetHidden?: (widgetId: string, mode: 'page' | 'global' | 'page-global') => void
+  onSelectFrameWidget?: (widgetId: string) => void
+  onSelectPageMain?: () => void
+  onToggleWidgetHidden?: (widgetId: string, mode: 'page' | 'app-frame' | 'page-frame') => void
   onReorderWidget?: (
     activeId: string,
     overId: string,
     parentId: string | null,
-    mode: 'page' | 'global' | 'page-global'
+    mode: 'page' | 'app-frame' | 'page-frame'
   ) => void
-  onAddWidgetAtRoot?: (widgetType: string) => void
+  onAddWidgetAtRoot?: (widgetType: string, options?: BuilderWidgetAddOptions) => void
+  isWidgetSelectable?: (widgetType: string, options?: BuilderWidgetAddOptions) => boolean
   onAddPage: () => void
   onDeletePage?: (pageId: string) => void
   isDeletingPage?: boolean
   widgets: WidgetDefinition[]
-  onAddWidget: (widgetType: string) => void
+  onAddWidget: (widgetType: string, options?: BuilderWidgetAddOptions) => void
   onQueryRun?: (result: BuilderQueryRunResult) => void
   queryRuns?: Record<string, BuilderQueryRunResult>
   queries: BuilderQuery[]
@@ -91,24 +92,23 @@ export const BuilderSidebar = ({
   projectRef,
   projectRestUrl,
   activeSection,
-  globalWidgets = [],
-  pageGlobals = [],
-  onAddGlobalWidget,
-  onAddPageGlobalWidget,
+  appFrameWidgets = [],
+  pageFrameWidgets = [],
+  onAddAppFrameWidget,
+  onAddPageFrameWidget,
   pages,
   activePageId,
   rootScreenId,
   onSetRootScreen,
-  selectedWidgetId,
-  selectedGlobalWidgetId,
-  selectedPageComponent = false,
+  selectedNode,
   onSelectPage,
   onSelectWidget,
-  onSelectGlobalWidget,
-  onSelectPageComponent,
+  onSelectFrameWidget,
+  onSelectPageMain,
   onToggleWidgetHidden,
   onReorderWidget,
   onAddWidgetAtRoot,
+  isWidgetSelectable,
   onAddPage,
   onDeletePage,
   isDeletingPage,
@@ -135,7 +135,9 @@ export const BuilderSidebar = ({
         <BuilderSidebarPanelComponents
           widgets={widgets}
           onAddWidget={onAddWidget}
-          onAddGlobalWidget={onAddGlobalWidget}
+          onAddAppFrameWidget={onAddAppFrameWidget}
+          onAddPageFrameWidget={onAddPageFrameWidget}
+          isWidgetSelectable={isWidgetSelectable}
           onClose={onClose}
         />
       ) : (
@@ -147,15 +149,13 @@ export const BuilderSidebar = ({
               onClose={onClose}
               activePage={activePage}
               pages={pages}
-              globalWidgets={globalWidgets}
-              pageGlobals={pageGlobals}
+              appFrameWidgets={appFrameWidgets}
+              pageFrameWidgets={pageFrameWidgets}
               widgets={widgets}
               queries={queries}
               jsFunctions={jsFunctions}
               queryRuns={queryRuns ?? {}}
-              selectedWidgetId={selectedWidgetId}
-              selectedGlobalWidgetId={selectedGlobalWidgetId}
-              selectedPageComponent={selectedPageComponent}
+              selectedNode={selectedNode}
             />
           ) : activeSection === 'tree' ? (
             <BuilderSidebarPanelTree
@@ -164,20 +164,18 @@ export const BuilderSidebar = ({
               onClose={onClose}
               activePage={activePage}
               pages={pages}
-              globalWidgets={globalWidgets}
-              pageGlobals={pageGlobals}
-              selectedWidgetId={selectedWidgetId}
-              selectedGlobalWidgetId={selectedGlobalWidgetId}
-              selectedPageComponent={selectedPageComponent}
+              appFrameWidgets={appFrameWidgets}
+              pageFrameWidgets={pageFrameWidgets}
+              selectedNode={selectedNode}
               widgets={widgets}
               onSelectPage={onSelectPage}
               onSelectWidget={onSelectWidget}
-              onSelectGlobalWidget={onSelectGlobalWidget}
-              onSelectPageComponent={onSelectPageComponent}
+              onSelectFrameWidget={onSelectFrameWidget}
+              onSelectPageMain={onSelectPageMain}
               onToggleWidgetHidden={onToggleWidgetHidden}
               onReorderWidget={onReorderWidget}
-              onAddGlobalWidget={onAddGlobalWidget}
-              onAddPageGlobalWidget={onAddPageGlobalWidget}
+              onAddAppFrameWidget={onAddAppFrameWidget}
+              onAddPageFrameWidget={onAddPageFrameWidget}
               onAddWidgetAtRoot={onAddWidgetAtRoot}
             />
           ) : activeSection === 'code' ? (

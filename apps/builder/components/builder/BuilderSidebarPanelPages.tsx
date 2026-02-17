@@ -111,16 +111,16 @@ export const BuilderSidebarPanelPages = ({
         </div>
         {section === 'pages' ? (
           <>
-            <ScrollArea className="min-h-0 flex-1 px-2 py-2">
-              <div className="mb-2">
+            <ScrollArea className="min-h-0 flex-1">
+              <div className='px-3 py-0.5'>
                 <Input_Shadcn_
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search pages"
-                  className="h-7 text-xs"
+                  size={"tiny"}
                 />
               </div>
-              <div className="flex min-h-full flex-col gap-0.5">
+              <div className="flex min-h-full flex-col py-2">
                 {filteredPages.length > 0 ? (
                   visiblePages.map((page) => {
                     const isRoot = rootScreenId === page.id
@@ -130,7 +130,7 @@ export const BuilderSidebarPanelPages = ({
                         role="button"
                         tabIndex={0}
                         className={cn(
-                          'group flex w-full items-center justify-between gap-2 rounded-sm text-[11px] transition',
+                          'group flex w-full items-center justify-between gap-2 rounded-sm text-xs transition h-8 px-2',
                           activePageId === page.id
                             ? 'bg-surface-200'
                             : 'hover:bg-surface-200'
@@ -147,7 +147,7 @@ export const BuilderSidebarPanelPages = ({
                           type="text"
                           size="tiny"
                           className={cn(
-                            'px-1 transition-opacity',
+                            'transition-opacity px-1',
                             isRoot
                               ? 'text-brand-500 opacity-100'
                               : 'text-foreground-muted opacity-0 group-hover:opacity-100'

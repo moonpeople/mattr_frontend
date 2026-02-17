@@ -1,6 +1,7 @@
 .monaco-editor {
   @apply relative overflow-visible;
   -webkit-text-size-adjust: 100%;
+  outline: none !important;
 }
 
 .monaco-editor-alt.monaco-editor-alt,
@@ -29,6 +30,20 @@
   color: var(--vscode-editor-foreground) !important;
   font-style: normal !important;
   font-weight: inherit !important;
+}
+
+.monaco-editor .focus-border,
+.monaco-editor.focused,
+.monaco-editor:focus,
+.monaco-editor:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+.monaco-no-suggest .monaco-editor .suggest-widget,
+.monaco-no-suggest .suggest-widget {
+  display: none !important;
 }
 
 .gutter {

@@ -6,7 +6,8 @@ import { builderKeys } from './keys'
 import type { BuilderApp } from './builder-apps'
 import type { BuilderQuery } from './builder-queries'
 import type { BuilderJsFunction } from './builder-js'
-import type { BuilderPage } from 'components/builder/types'
+import type { BuilderAppLayout, BuilderPage } from 'components/builder/types'
+import type { BuilderAppTheme } from 'state/app-theme-state'
 
 export type BuilderRuntimePage = {
   id: string
@@ -22,6 +23,8 @@ export type BuilderRuntimePayload = {
   projectRef?: string
   orgSlug?: string
   rootScreen?: string | null
+  appLayout?: BuilderAppLayout
+  theme?: BuilderAppTheme | null
   pages: BuilderRuntimePage[]
   queries: Record<string, unknown>[]
   js: Record<string, unknown>[]
@@ -90,7 +93,8 @@ export const buildRuntimePayload = (
   pages: BuilderPage[],
   queries: BuilderQuery[],
   jsFunctions: BuilderJsFunction[],
-  globalWidgets: BuilderPage['widgets'] = []
+  appLayout: BuilderAppLayout,
+  theme?: BuilderAppTheme | null
 ): BuilderRuntimePayload => {
   const rootCandidate =
     (pages.find((page) => {
@@ -105,22 +109,30 @@ export const buildRuntimePayload = (
   return {
     appId: app.id,
     name: app.name,
-    projectRef: app.projectRef,
+    projectRef: app.projectRef ?? undefined,
     orgSlug: app.orgSlug,
+    theme: theme ?? app.theme ?? null,
     rootScreen,
+    appLayout,
     pages: pages.map((page) => ({
       id: page.id,
       name: page.name,
       access: page.access ?? 'auth',
       menu: page.menu ?? null,
-      layout: {
-        ...(page.layout ?? {}),
-        widgets: page.widgets,
-        globals: globalWidgets,
-        pageGlobals: page.pageGlobals ?? [],
-        pageMeta: page.pageMeta ?? null,
-        pageComponent: page.pageComponent ?? null,
-      },
+      layout: (() => {
+        const nextLayout = {
+          ...(page.layout ?? {}),
+          pageLayout: page.pageLayout,
+          pageMeta: page.pageMeta ?? null,
+        }
+        delete (nextLayout as Record<string, unknown>).widgets
+        delete (nextLayout as Record<string, unknown>).globals
+        delete (nextLayout as Record<string, unknown>).pageGlobals
+        delete (nextLayout as Record<string, unknown>).pageComponent
+        delete (nextLayout as Record<string, unknown>).main
+        delete (nextLayout as Record<string, unknown>).frames
+        return nextLayout
+      })(),
     })),
     queries: queries.map((query) => ({
       id: query.id,

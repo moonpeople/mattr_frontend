@@ -1,0 +1,1306 @@
+{
+  "components": [
+    {
+      "name": "comp-01",
+      "features": [
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-02",
+      "features": [
+        "input",
+        "label",
+        "required_state"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "required"
+      ]
+    },
+    {
+      "name": "comp-03",
+      "features": [
+        "helper_text",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "helper"
+      ]
+    },
+    {
+      "name": "comp-04",
+      "features": [
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "hint"
+      ]
+    },
+    {
+      "name": "comp-05",
+      "features": [
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-06",
+      "features": [
+        "helper_text",
+        "input",
+        "label",
+        "validation"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "error"
+      ]
+    },
+    {
+      "name": "comp-07",
+      "features": [
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-08",
+      "features": [
+        "disabled_state",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "disabled"
+      ]
+    },
+    {
+      "name": "comp-09",
+      "features": [
+        "addon_inline_start",
+        "disabled_state",
+        "icon",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-10",
+      "features": [
+        "addon_inline_end",
+        "disabled_state",
+        "icon",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-11",
+      "features": [
+        "addon_inline_start",
+        "disabled_state",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-12",
+      "features": [
+        "addon_inline_end",
+        "disabled_state",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-13",
+      "features": [
+        "addon_inline_end",
+        "addon_inline_start",
+        "disabled_state",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-14",
+      "features": [
+        "addon_attached",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-15",
+      "features": [
+        "addon_attached",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-16",
+      "features": [
+        "addon_attached",
+        "addon_inline_start",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-17",
+      "features": [
+        "addon_attached",
+        "addon_select",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "select",
+        "native select"
+      ]
+    },
+    {
+      "name": "comp-18",
+      "features": [
+        "addon_attached",
+        "addon_select",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "select",
+        "native select"
+      ]
+    },
+    {
+      "name": "comp-19",
+      "features": [
+        "addon_inline_end",
+        "button",
+        "disabled_state",
+        "icon",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "button",
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "button"
+      ]
+    },
+    {
+      "name": "comp-20",
+      "features": [
+        "addon_attached",
+        "button",
+        "disabled_state",
+        "icon",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "button",
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "button"
+      ]
+    },
+    {
+      "name": "comp-21",
+      "features": [
+        "addon_attached",
+        "button",
+        "disabled_state",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "button",
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "button"
+      ]
+    },
+    {
+      "name": "comp-22",
+      "features": [
+        "button",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "button"
+      ]
+    },
+    {
+      "name": "comp-23",
+      "features": [
+        "addon_inline_end",
+        "button",
+        "disabled_state",
+        "icon",
+        "input",
+        "label",
+        "password"
+      ],
+      "inputTypes": [
+        "button"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "button",
+        "password"
+      ]
+    },
+    {
+      "name": "comp-24",
+      "features": [
+        "addon_inline_end",
+        "button",
+        "disabled_state",
+        "icon",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "button",
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "button"
+      ]
+    },
+    {
+      "name": "comp-25",
+      "features": [
+        "addon_inline_end",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "search"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "search",
+        "kbd"
+      ]
+    },
+    {
+      "name": "comp-26",
+      "features": [
+        "addon_inline_end",
+        "addon_inline_start",
+        "button",
+        "disabled_state",
+        "icon",
+        "input",
+        "label",
+        "search"
+      ],
+      "inputTypes": [
+        "search",
+        "submit"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "button",
+        "search"
+      ]
+    },
+    {
+      "name": "comp-27",
+      "features": [
+        "addon_inline_end",
+        "addon_inline_start",
+        "button",
+        "disabled_state",
+        "icon",
+        "input",
+        "label",
+        "loading",
+        "search"
+      ],
+      "inputTypes": [
+        "search",
+        "submit"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "button",
+        "search"
+      ]
+    },
+    {
+      "name": "comp-28",
+      "features": [
+        "button",
+        "date_time",
+        "disabled_state",
+        "helper_text",
+        "icon",
+        "input",
+        "label",
+        "number",
+        "validation"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "button",
+        "number",
+        "react aria"
+      ]
+    },
+    {
+      "name": "comp-29",
+      "features": [
+        "button",
+        "date_time",
+        "disabled_state",
+        "helper_text",
+        "icon",
+        "input",
+        "label",
+        "number",
+        "validation"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "button",
+        "number",
+        "react aria"
+      ]
+    },
+    {
+      "name": "comp-30",
+      "features": [
+        "addon_inline_end",
+        "file",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "file"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "file"
+      ]
+    },
+    {
+      "name": "comp-31",
+      "features": [
+        "disabled_state",
+        "input",
+        "label",
+        "label_overlap"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-32",
+      "features": [
+        "input",
+        "label",
+        "label_floating",
+        "label_overlap"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-33",
+      "features": [
+        "disabled_state",
+        "input",
+        "label",
+        "validation"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-34",
+      "features": [
+        "addon_inline_end",
+        "describedby",
+        "disabled_state",
+        "helper_text",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-35",
+      "features": [
+        "describedby",
+        "helper_text",
+        "input",
+        "label"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label"
+      ]
+    },
+    {
+      "name": "comp-36",
+      "features": [
+        "date_time",
+        "helper_text",
+        "input",
+        "label"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "date",
+        "react aria"
+      ]
+    },
+    {
+      "name": "comp-37",
+      "features": [
+        "date_time",
+        "helper_text",
+        "input",
+        "label"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "date",
+        "react aria"
+      ]
+    },
+    {
+      "name": "comp-38",
+      "features": [
+        "addon_inline_start",
+        "date_time",
+        "helper_text",
+        "icon",
+        "input",
+        "label"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "date",
+        "react aria"
+      ]
+    },
+    {
+      "name": "comp-39",
+      "features": [
+        "addon_inline_end",
+        "date_time",
+        "helper_text",
+        "icon",
+        "input",
+        "label"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "date",
+        "react aria"
+      ]
+    },
+    {
+      "name": "comp-40",
+      "features": [
+        "date_time",
+        "helper_text",
+        "input",
+        "label"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "date",
+        "react aria"
+      ]
+    },
+    {
+      "name": "comp-41",
+      "features": [
+        "addon_inline_end",
+        "button",
+        "date_time",
+        "helper_text",
+        "icon",
+        "input",
+        "label"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "date",
+        "calendar",
+        "picker",
+        "react aria"
+      ]
+    },
+    {
+      "name": "comp-42",
+      "features": [
+        "addon_inline_end",
+        "button",
+        "date_time",
+        "helper_text",
+        "icon",
+        "input",
+        "label"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "date",
+        "calendar",
+        "range calendar",
+        "picker",
+        "react aria"
+      ]
+    },
+    {
+      "name": "comp-43",
+      "features": [
+        "addon_inline_end",
+        "button",
+        "date_time",
+        "disabled_state",
+        "helper_text",
+        "icon",
+        "input",
+        "label"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "date",
+        "calendar",
+        "range calendar",
+        "picker",
+        "react aria"
+      ]
+    },
+    {
+      "name": "comp-44",
+      "features": [
+        "disabled_state",
+        "helper_text",
+        "input",
+        "label",
+        "otp"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "otp"
+      ]
+    },
+    {
+      "name": "comp-45",
+      "features": [
+        "disabled_state",
+        "helper_text",
+        "icon",
+        "input",
+        "label",
+        "otp"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "otp"
+      ]
+    },
+    {
+      "name": "comp-46",
+      "features": [
+        "addon_attached",
+        "addon_inline_end",
+        "addon_inline_start",
+        "disabled_state",
+        "helper_text",
+        "icon",
+        "input",
+        "label",
+        "phone",
+        "validation"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "phone"
+      ]
+    },
+    {
+      "name": "comp-47",
+      "features": [
+        "addon_inline_start",
+        "disabled_state",
+        "helper_text",
+        "icon",
+        "input",
+        "label",
+        "payment"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "checkout",
+        "payment",
+        "credit card",
+        "form"
+      ]
+    },
+    {
+      "name": "comp-48",
+      "features": [
+        "helper_text",
+        "input",
+        "label",
+        "payment"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "checkout",
+        "payment",
+        "credit card",
+        "form"
+      ]
+    },
+    {
+      "name": "comp-49",
+      "features": [
+        "helper_text",
+        "input",
+        "label",
+        "payment"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "checkout",
+        "payment",
+        "credit card",
+        "form"
+      ]
+    },
+    {
+      "name": "comp-50",
+      "features": [
+        "addon_attached",
+        "addon_inline_end",
+        "disabled_state",
+        "helper_text",
+        "icon",
+        "input",
+        "payment"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "checkout",
+        "payment",
+        "credit card",
+        "form"
+      ]
+    },
+    {
+      "name": "comp-51",
+      "features": [
+        "addon_inline_end",
+        "button",
+        "describedby",
+        "disabled_state",
+        "icon",
+        "input",
+        "label",
+        "password"
+      ],
+      "inputTypes": [
+        "button"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "password"
+      ]
+    },
+    {
+      "name": "comp-52",
+      "features": [
+        "input",
+        "label",
+        "readonly_state"
+      ],
+      "inputTypes": [
+        "email"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "read-only"
+      ]
+    },
+    {
+      "name": "comp-53",
+      "features": [
+        "addon_inline_end",
+        "button",
+        "copy",
+        "disabled_state",
+        "icon",
+        "input",
+        "label",
+        "readonly_state",
+        "tooltip"
+      ],
+      "inputTypes": [
+        "button",
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "copy"
+      ]
+    },
+    {
+      "name": "comp-54",
+      "features": [
+        "helper_text",
+        "input",
+        "label",
+        "mask"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "mask"
+      ]
+    },
+    {
+      "name": "comp-55",
+      "features": [
+        "helper_text",
+        "input",
+        "label",
+        "mask"
+      ],
+      "inputTypes": [
+        "text"
+      ],
+      "tags": [
+        "input",
+        "label",
+        "mask",
+        "time"
+      ]
+    },
+    {
+      "name": "comp-56",
+      "features": [
+        "addon_inline_end",
+        "addon_inline_start",
+        "helper_text",
+        "input",
+        "label",
+        "tags"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "tag",
+        "emblor"
+      ]
+    },
+    {
+      "name": "comp-57",
+      "features": [
+        "addon_inline_end",
+        "addon_inline_start",
+        "helper_text",
+        "input",
+        "label",
+        "tags"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "tag",
+        "emblor"
+      ]
+    },
+    {
+      "name": "comp-58",
+      "features": [
+        "disabled_state",
+        "helper_text",
+        "input",
+        "label",
+        "otp"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "input",
+        "label",
+        "otp"
+      ]
+    },
+    {
+      "name": "comp-59",
+      "features": [
+        "label",
+        "textarea"
+      ],
+      "inputTypes": [],
+      "tags": [
+        "label",
+        "textarea"
+      ]
+    }
+  ],
+  "features": {
+    "addon_attached": {
+      "count": 9,
+      "examples": [
+        "comp-14",
+        "comp-15",
+        "comp-16",
+        "comp-17",
+        "comp-18",
+        "comp-20"
+      ]
+    },
+    "addon_inline_end": {
+      "count": 21,
+      "examples": [
+        "comp-10",
+        "comp-12",
+        "comp-13",
+        "comp-19",
+        "comp-23",
+        "comp-24"
+      ]
+    },
+    "addon_inline_start": {
+      "count": 11,
+      "examples": [
+        "comp-09",
+        "comp-11",
+        "comp-13",
+        "comp-16",
+        "comp-26",
+        "comp-27"
+      ]
+    },
+    "addon_select": {
+      "count": 2,
+      "examples": [
+        "comp-17",
+        "comp-18"
+      ]
+    },
+    "button": {
+      "count": 15,
+      "examples": [
+        "comp-19",
+        "comp-20",
+        "comp-21",
+        "comp-22",
+        "comp-23",
+        "comp-24"
+      ]
+    },
+    "copy": {
+      "count": 1,
+      "examples": [
+        "comp-53"
+      ]
+    },
+    "date_time": {
+      "count": 10,
+      "examples": [
+        "comp-28",
+        "comp-29",
+        "comp-36",
+        "comp-37",
+        "comp-38",
+        "comp-39"
+      ]
+    },
+    "describedby": {
+      "count": 3,
+      "examples": [
+        "comp-34",
+        "comp-35",
+        "comp-51"
+      ]
+    },
+    "disabled_state": {
+      "count": 27,
+      "examples": [
+        "comp-08",
+        "comp-09",
+        "comp-10",
+        "comp-11",
+        "comp-12",
+        "comp-13"
+      ]
+    },
+    "file": {
+      "count": 1,
+      "examples": [
+        "comp-30"
+      ]
+    },
+    "helper_text": {
+      "count": 26,
+      "examples": [
+        "comp-03",
+        "comp-06",
+        "comp-28",
+        "comp-29",
+        "comp-34",
+        "comp-35"
+      ]
+    },
+    "icon": {
+      "count": 21,
+      "examples": [
+        "comp-09",
+        "comp-10",
+        "comp-19",
+        "comp-20",
+        "comp-23",
+        "comp-24"
+      ]
+    },
+    "input": {
+      "count": 58,
+      "examples": [
+        "comp-01",
+        "comp-02",
+        "comp-03",
+        "comp-04",
+        "comp-05",
+        "comp-06"
+      ]
+    },
+    "label": {
+      "count": 58,
+      "examples": [
+        "comp-01",
+        "comp-02",
+        "comp-03",
+        "comp-04",
+        "comp-05",
+        "comp-06"
+      ]
+    },
+    "label_floating": {
+      "count": 1,
+      "examples": [
+        "comp-32"
+      ]
+    },
+    "label_overlap": {
+      "count": 2,
+      "examples": [
+        "comp-31",
+        "comp-32"
+      ]
+    },
+    "loading": {
+      "count": 1,
+      "examples": [
+        "comp-27"
+      ]
+    },
+    "mask": {
+      "count": 2,
+      "examples": [
+        "comp-54",
+        "comp-55"
+      ]
+    },
+    "number": {
+      "count": 2,
+      "examples": [
+        "comp-28",
+        "comp-29"
+      ]
+    },
+    "otp": {
+      "count": 3,
+      "examples": [
+        "comp-44",
+        "comp-45",
+        "comp-58"
+      ]
+    },
+    "password": {
+      "count": 2,
+      "examples": [
+        "comp-23",
+        "comp-51"
+      ]
+    },
+    "payment": {
+      "count": 4,
+      "examples": [
+        "comp-47",
+        "comp-48",
+        "comp-49",
+        "comp-50"
+      ]
+    },
+    "phone": {
+      "count": 1,
+      "examples": [
+        "comp-46"
+      ]
+    },
+    "readonly_state": {
+      "count": 2,
+      "examples": [
+        "comp-52",
+        "comp-53"
+      ]
+    },
+    "required_state": {
+      "count": 1,
+      "examples": [
+        "comp-02"
+      ]
+    },
+    "search": {
+      "count": 2,
+      "examples": [
+        "comp-26",
+        "comp-27"
+      ]
+    },
+    "tags": {
+      "count": 2,
+      "examples": [
+        "comp-56",
+        "comp-57"
+      ]
+    },
+    "textarea": {
+      "count": 1,
+      "examples": [
+        "comp-59"
+      ]
+    },
+    "tooltip": {
+      "count": 1,
+      "examples": [
+        "comp-53"
+      ]
+    },
+    "validation": {
+      "count": 5,
+      "examples": [
+        "comp-06",
+        "comp-28",
+        "comp-29",
+        "comp-33",
+        "comp-46"
+      ]
+    }
+  }
+}

@@ -23,6 +23,17 @@ export type WidgetFieldDependency = {
   value: WidgetFieldDependencyValue
 }
 
+export type SegmentedFxConfig = {
+  modeKey: string
+  fxEnabledKey: string
+  fxKey: string
+  defaultMode: string
+  defaultFxValue?: string
+  fxPlaceholder?: string
+}
+
+export type WidgetFieldControl = 'typography' | 'collectionItems' | 'collectionColumns'
+
 type WidgetFieldBase = {
   key: string
   label: string
@@ -30,8 +41,12 @@ type WidgetFieldBase = {
   dependsOn?: WidgetFieldDependency
   advanced?: boolean
   supportsFx?: boolean
-  valueType?: string
+  valueType?: string | string[]
   description?: string
+  control?: WidgetFieldControl
+  inlineWith?: string
+  source?: 'props' | 'spacing'
+  segmentedFx?: SegmentedFxConfig
 }
 
 export type WidgetField =
@@ -48,11 +63,19 @@ export type WidgetField =
       placeholder?: string
     })
   | (WidgetFieldBase & {
+      type: 'custom'
+      placeholder?: string
+    })
+  | (WidgetFieldBase & {
       type: 'color'
       placeholder?: string
     })
   | (WidgetFieldBase & {
       type: 'select'
+      options: WidgetFieldOption[]
+    })
+  | (WidgetFieldBase & {
+      type: 'radioGroup'
       options: WidgetFieldOption[]
     })
   | (WidgetFieldBase & {
@@ -69,12 +92,29 @@ export type WidgetField =
 export type WidgetRenderContext = {
   mode: 'canvas' | 'preview'
   widgetId: string
+  iconLibrary?: string
   state?: Record<string, unknown>
   evaluationContext?: Record<string, unknown>
   setState?: (patch: Record<string, unknown>) => void
   runActions?: (event: string, payload?: Record<string, unknown>) => void
   openInspectorPanel?: (panel: { key: string; label: string }) => void
   children?: ReactNode
+  renderChildren?: (options?: { slot?: string; includeUnassigned?: boolean }) => ReactNode
+}
+
+export type WidgetLayoutScope = 'global' | 'local' | 'both'
+
+export type WidgetLayoutSlot = 'header' | 'sidebar' | 'drawer' | 'modal' | 'split' | 'content'
+
+export type WidgetLayoutConfig = {
+  scope?: WidgetLayoutScope
+  slot?: WidgetLayoutSlot
+  minW?: number
+  minH?: number
+  maxW?: number
+  maxH?: number
+  canResize?: boolean
+  resizeHandles?: string[]
 }
 
 export type WidgetDefinition<Props extends Record<string, unknown> = Record<string, unknown>> = {
@@ -84,12 +124,16 @@ export type WidgetDefinition<Props extends Record<string, unknown> = Record<stri
   description?: string
   defaultProps: Props
   fields?: WidgetField[]
+  inspector?: WidgetInspectorConfig
+  layout?: WidgetLayoutConfig
+  events?: string[]
   supportsChildren?: boolean
   builder?: {
     resizeHandles?: string[]
     eventOptions?: WidgetFieldOption[]
+    eventActionOptions?: WidgetFieldOption[]
   }
-  render: (props: Props, context?: WidgetRenderContext) => ReactNode
+  render(props: Props, context?: WidgetRenderContext): ReactNode
 }
 
 export type WidgetInspectorConfig = {
@@ -104,3 +148,7 @@ export type WidgetInstance = {
   props: Record<string, unknown>
   children?: WidgetInstance[]
 }
+
+export const createWidgetDefinition = <Props extends Record<string, unknown>>(
+  definition: WidgetDefinition<Props>
+) => definition

@@ -1,44 +1,46 @@
 import { useMemo, useState } from 'react'
 import { Search, X } from 'lucide-react'
 
-import type { WidgetDefinition } from 'widgets'
+import type { WidgetDefinition } from 'widgets/runtime'
 import { Button, Input, Input_Shadcn_, ScrollArea, Separator, cn } from 'ui'
 
-import { WidgetCard } from './BuilderSidebarItems'
+import { WidgetListItem } from './BuilderSidebarItems'
+import type { BuilderWidgetAddOptions } from './types'
 
 // Панель компонентов: поиск, списки виджетов и модули.
 
-// Набор быстрых элементов для блока Common.
-const commonWidgetTypes = [
-  'Table',
-  'Text',
-  'Button',
-  'TextInput',
-  'NumberInput',
-  'Select',
-  'Container',
-  'Form',
-  'Tabs',
-  'Chart',
-  'KeyValue',
-  'Image',
-  'Navigation',
-]
+// Виджеты, сделанные по аналогии с EditableText.
+const madeWidgetTypes = ['EditableText', 'EditableTextArea', 'EditableNumber', 'NumberInput', 'Currency', 'Percent', 'Navigation']
 
 const widgetLabelOverrides: Record<string, string> = {
   EditableTextArea: 'Editable Text Area',
   TextArea: 'Text Area',
-  TextInput: 'Text Input',
+  TextInput: 'Input',
+  Email: 'Email',
+  Url: 'URL',
+  NumberInput: 'Number Input',
+  Currency: 'Currency',
+  Percent: 'Percent',
   TextEditor: 'Rich Text Editor',
   JsonEditor: 'JSON Editor',
-  NumberInput: 'Number Input',
   EditableNumber: 'Editable Number',
   PhoneNumberInput: 'Phone Number',
   RangeSlider: 'Range Slider',
   DatePicker: 'Date',
+  Calendar: 'Calendar',
   DateRangePicker: 'Date Range',
   DateTimePicker: 'Date Time',
   TimePicker: 'Time',
+  OutlineButton: 'Outline Button',
+  CloseButton: 'Close Button',
+  CalendarInput: 'Calendar Input',
+  Date: 'Date',
+  DateRange: 'Date Range',
+  DateTime: 'Date Time',
+  Day: 'Day',
+  Month: 'Month',
+  Time: 'Time',
+  Year: 'Year',
   SwitchGroup: 'Switch Group',
   FileUpload: 'File Input',
   AgentChat: 'Agent Chat',
@@ -48,6 +50,12 @@ const widgetLabelOverrides: Record<string, string> = {
   SignaturePad: 'Signature',
   JsonSchemaForm: 'JSON Schema Form',
   Tabs: 'Tabbed Container',
+  TabbedContainer: 'Tabbed Container',
+  SteppedContainer: 'Stepped Container',
+  CollapsibleContainer: 'Collapsible Container',
+  LinkCard: 'Link Card',
+  Drawer: 'Drawer',
+  SplitPane: 'Split Pane',
   Chart: 'Mixed Chart',
   KeyValue: 'Key Value',
   ProgressCircle: 'Progress Circle',
@@ -81,6 +89,8 @@ const widgetSections = [
       'EditableText',
       'EditableTextArea',
       'TextInput',
+      'Email',
+      'Url',
       'TextArea',
       'PasswordInput',
       'JsonEditor',
@@ -91,8 +101,10 @@ const widgetSections = [
     key: 'number-inputs',
     label: 'Number inputs',
     types: [
-      'NumberInput',
       'EditableNumber',
+      'NumberInput',
+      'Currency',
+      'Percent',
       'PhoneNumberInput',
       'RangeSlider',
       'Rating',
@@ -120,7 +132,17 @@ const widgetSections = [
   {
     key: 'date-time-inputs',
     label: 'Date and time inputs',
-    types: ['DatePicker', 'DateRangePicker', 'DateTimePicker', 'TimePicker'],
+    types: [
+      'Calendar',
+      'CalendarInput',
+      'Date',
+      'DateRange',
+      'DateTime',
+      'Day',
+      'Month',
+      'Time',
+      'Year',
+    ],
   },
   {
     key: 'special-inputs',
@@ -144,9 +166,12 @@ const widgetSections = [
     label: 'Buttons',
     types: [
       'Button',
+      'OutlineButton',
+      'CloseButton',
       'ButtonGroup',
       'DropdownButton',
       'Link',
+      'LinkCard',
       'LinkList',
       'SplitButton',
       'ToggleButton',
@@ -192,12 +217,26 @@ const widgetSections = [
     label: 'Frames',
     types: ['GlobalDrawer', 'GlobalModal', 'GlobalSplitPane'],
     source: 'all',
-    addMode: 'global' as const,
+    addMode: 'page-frame' as const,
   },
   {
     key: 'containers',
     label: 'Containers and forms',
-    types: ['Container', 'Form', 'JsonSchemaForm', 'Modal', 'Wizard'],
+    types: [
+      'Container',
+      'CollapsibleContainer',
+      'Stack',
+      'Form',
+      'JsonSchemaForm',
+      'SteppedContainer',
+      'TabbedContainer',
+      'Header',
+      'Sidebar',
+      'Drawer',
+      'Modal',
+      'SplitPane',
+      'Wizard',
+    ],
   },
   {
     key: 'repeatables',
@@ -229,15 +268,19 @@ const widgetSections = [
 
 type BuilderSidebarPanelComponentsProps = {
   widgets: WidgetDefinition[]
-  onAddWidget: (widgetType: string) => void
-  onAddGlobalWidget?: (type: string) => void
+  onAddWidget: (widgetType: string, options?: BuilderWidgetAddOptions) => void
+  onAddAppFrameWidget?: (type: string) => void
+  onAddPageFrameWidget?: (type: string) => void
+  isWidgetSelectable?: (widgetType: string, options?: BuilderWidgetAddOptions) => boolean
   onClose?: () => void
 }
 
 export const BuilderSidebarPanelComponents = ({
   widgets,
   onAddWidget,
-  onAddGlobalWidget,
+  onAddAppFrameWidget,
+  onAddPageFrameWidget,
+  isWidgetSelectable,
   onClose,
 }: BuilderSidebarPanelComponentsProps) => {
   const [search, setSearch] = useState('')
@@ -256,8 +299,8 @@ export const BuilderSidebarPanelComponents = ({
     () => new Map(availableWidgets.map((widget) => [widget.type, widget])),
     [availableWidgets]
   )
-  const commonWidgets = useMemo(() => {
-    return commonWidgetTypes
+  const madeWidgets = useMemo(() => {
+    return madeWidgetTypes
       .map((type) => availableWidgets.find((widget) => widget.type === type))
       .filter(Boolean) as WidgetDefinition[]
   }, [availableWidgets])
@@ -272,12 +315,23 @@ export const BuilderSidebarPanelComponents = ({
         .some((value) => value?.toLowerCase().includes(normalizedSearch))
     }
 
+    const seenWidgetTypes = new Set<string>()
+
     return widgetSections
       .map((section) => {
         const sourceMap = section.source === 'all' ? widgetMap : availableWidgetMap
-        const items = section.types
-          .map((type) => sourceMap.get(type))
-          .filter(Boolean) as WidgetDefinition[]
+        const items: WidgetDefinition[] = []
+        section.types.forEach((type) => {
+          if (seenWidgetTypes.has(type)) {
+            return
+          }
+          const widget = sourceMap.get(type)
+          if (!widget) {
+            return
+          }
+          seenWidgetTypes.add(type)
+          items.push(widget)
+        })
         const filteredItems = items.filter(matchesSearch)
         return { ...section, items: filteredItems }
       })
@@ -293,6 +347,9 @@ export const BuilderSidebarPanelComponents = ({
     }
     return widgetLabelOverrides[widget.type] ?? widget.label
   }
+
+  const isDisabled = (widget: WidgetDefinition) =>
+    isWidgetSelectable ? !isWidgetSelectable(widget.type) : false
 
   return (
     <>
@@ -341,17 +398,19 @@ export const BuilderSidebarPanelComponents = ({
             </div>
             <ScrollArea className="min-h-0 flex-1 px-3 pb-3">
               <div className="space-y-4">
-                {normalizedSearch.length === 0 && commonWidgets.length > 0 && (
+                {normalizedSearch.length === 0 && madeWidgets.length > 0 && (
                   <div className="space-y-2">
-                    <div className="text-xs font-semibold text-foreground">Commonly used</div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {commonWidgets.map((widget) => (
-                        <WidgetCard
+                    <div className="text-xs font-semibold text-foreground">Сделанные виджеты</div>
+                    <div className="space-y-1">
+                      {madeWidgets.map((widget) => (
+                        <WidgetListItem
                           key={widget.type}
                           widget={widget}
                           label={resolveWidgetLabel(widget)}
                           onAddWidget={onAddWidget}
-                          onAddGlobalWidget={onAddGlobalWidget}
+                          onAddAppFrameWidget={onAddAppFrameWidget}
+                          onAddPageFrameWidget={onAddPageFrameWidget}
+                          disabled={isDisabled(widget)}
                         />
                       ))}
                     </div>
@@ -360,15 +419,17 @@ export const BuilderSidebarPanelComponents = ({
                 {componentSections.map((sectionItem) => (
                   <div key={sectionItem.key} className="space-y-2">
                     <div className="text-xs font-semibold text-foreground">{sectionItem.label}</div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
                       {sectionItem.items.map((widget) => (
-                        <WidgetCard
+                        <WidgetListItem
                           key={widget.type}
                           widget={widget}
                           addMode={sectionItem.addMode}
                           label={resolveWidgetLabel(widget, sectionItem.key)}
                           onAddWidget={onAddWidget}
-                          onAddGlobalWidget={onAddGlobalWidget}
+                          onAddAppFrameWidget={onAddAppFrameWidget}
+                          onAddPageFrameWidget={onAddPageFrameWidget}
+                          disabled={isDisabled(widget)}
                         />
                       ))}
                     </div>
