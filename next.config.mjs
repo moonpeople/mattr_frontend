@@ -5,7 +5,6 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const disableHcaptcha = process.env.NEXT_PUBLIC_ENABLE_HCAPTCHA !== 'true'
-const iotStudioUrl = process.env.IOT_STUDIO_URL || process.env.NEXT_PUBLIC_IOT_STUDIO_URL
 const studioUrl = process.env.STUDIO_URL || process.env.NEXT_PUBLIC_STUDIO_URL
 const builderUrl = process.env.BUILDER_URL || process.env.NEXT_PUBLIC_BUILDER_URL
 
@@ -30,21 +29,6 @@ const nextConfig = {
         permanent: false,
       }
     )
-
-    if (iotStudioUrl) {
-      rules.push(
-        {
-          source: '/iot/:ref([a-z0-9-]{16,36})',
-          destination: '/iot/project/:ref',
-          permanent: false,
-        },
-        {
-          source: '/iot/:ref([a-z0-9-]{16,36})/:path*',
-          destination: '/iot/project/:ref/:path*',
-          permanent: false,
-        }
-      )
-    }
 
     if (studioUrl) {
       rules.push(
@@ -80,23 +64,6 @@ const nextConfig = {
   },
   async rewrites() {
     const rules = []
-
-    if (iotStudioUrl) {
-      rules.unshift(
-        { source: '/iot/_next/:path*', destination: `${iotStudioUrl}/iot/_next/:path*` },
-        { source: '/iot/static/:path*', destination: `${iotStudioUrl}/iot/static/:path*` },
-        { source: '/iot/favicon.ico', destination: `${iotStudioUrl}/iot/favicon.ico` },
-        {
-          source: '/iot/:ref([a-z0-9-]{16,36})',
-          destination: `${iotStudioUrl}/iot/project/:ref`,
-        },
-        {
-          source: '/iot/:ref([a-z0-9-]{16,36})/:path*',
-          destination: `${iotStudioUrl}/iot/project/:ref/:path*`,
-        },
-        { source: '/iot/:path*', destination: `${iotStudioUrl}/iot/:path*` }
-      )
-    }
 
     if (studioUrl) {
       rules.unshift(

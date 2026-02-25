@@ -527,6 +527,9 @@ importers:
       autoevals:
         specifier: ^0.0.131
         version: 0.0.131(encoding@0.1.13)(ws@8.19.0)
+      autoprefixer:
+        specifier: ^10.4.24
+        version: 10.4.24(postcss@8.5.6)
       braintrust:
         specifier: ^1.0.2
         version: 1.1.1(@aws-sdk/credential-provider-web-identity@3.972.3)(chokidar@3.6.0)(zod@3.25.76)
@@ -759,7 +762,7 @@ importers:
     dependencies:
       '@mertasan/tailwindcss-variables':
         specifier: ^2.2.3
-        version: 2.7.0(postcss@8.5.6)
+        version: 2.7.0(autoprefixer@10.4.24(postcss@8.5.6))(postcss@8.5.6)
       '@radix-ui/colors':
         specifier: ^0.1.8
         version: 0.1.9
@@ -6598,6 +6601,13 @@ packages:
   autoevals@0.0.131:
     resolution: {integrity: sha512-F+3lraja+Ms7n1M2cpWl65N7AYx4sPocRW454H5HlSGabYMfuFOUxw8IXmEYDkQ38BxtZ0Wd5ZAQj9RF59YJWw==}
 
+  autoprefixer@10.4.24:
+    resolution: {integrity: sha512-uHZg7N9ULTVbutaIsDRoUkoS8/h3bdsmVJYZ5l3wv8Cp/6UIIoRDm90hZ+BwxUj/hGBEzLxdHNSKuFpn8WOyZw==}
+    engines: {node: ^10 || ^12 || >=14}
+    hasBin: true
+    peerDependencies:
+      postcss: ^8.1.0
+
   available-typed-arrays@1.0.7:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
@@ -8170,6 +8180,9 @@ packages:
   forwarded@0.2.0:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
+
+  fraction.js@5.3.4:
+    resolution: {integrity: sha512-1X1NTtiJphryn/uLQz3whtY6jK3fTqoE3ohKs0tT+Ujr1W59oopxmoEh7Lu5p6vBaPbgoM0bzveAW4Qi5RyWDQ==}
 
   framer-motion@11.18.2:
     resolution: {integrity: sha512-5F5Och7wrvtLVElIpclDT0CBzMVg3dL22B64aZwHtsIY8RB4mXICLrkajK4G9R+ieSAGcgrLeae2SeUTg2pr6w==}
@@ -11888,6 +11901,9 @@ packages:
   tailwind-merge@3.4.1:
     resolution: {integrity: sha512-2OA0rFqWOkITEAOFWSBSApYkDeH9t2B3XSJuI4YztKBzK3mX0737A2qtxDZ7xkw9Zfh0bWl+r34sF3HXV+Ig7Q==}
 
+  tailwind-merge@3.5.0:
+    resolution: {integrity: sha512-I8K9wewnVDkL1NTGoqWmVEIlUcB9gFriAEkXkfCjX5ib8ezGxtR3xD7iZIxrfArjEsH7F1CHD4RFUtxefdqV/A==}
+
   tailwindcss-animate@1.0.7:
     resolution: {integrity: sha512-bl6mpH3T7I3UFxuvDEXLxy/VuFxBk5bbzplh7tXI68mwMokNYd1t9qPBHlnyTwfa4JGC4zP516I1hYYtQ/vspA==}
     peerDependencies:
@@ -11909,7 +11925,7 @@ packages:
   tar@6.2.1:
     resolution: {integrity: sha512-DZ4yORTwrbTj/7MZYq2w+/ZFdI6OZ/f9SFHR+71gIVUZhOQPHzVCLpvRnPgyaMpfWxxk/4ONva3GQSyNIKRv6A==}
     engines: {node: '>=10'}
-    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   tdigest@0.1.2:
     resolution: {integrity: sha512-+G0LLgjjo9BZX2MfdvPfH+MKLCrxlXSYec5DaPYP1fe6Iyhf0/fSmJ0bFiZ1F8BT6cGXl2LpltQptzjXKWEkKA==}
@@ -14707,8 +14723,9 @@ snapshots:
     dependencies:
       langium: 3.3.1
 
-  '@mertasan/tailwindcss-variables@2.7.0(postcss@8.5.6)':
+  '@mertasan/tailwindcss-variables@2.7.0(autoprefixer@10.4.24(postcss@8.5.6))(postcss@8.5.6)':
     dependencies:
+      autoprefixer: 10.4.24(postcss@8.5.6)
       lodash: 4.17.23
       postcss: 8.5.6
 
@@ -18761,7 +18778,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.7)(@vitest/ui@3.2.4)(msw@2.12.7(@types/node@22.19.7)(typescript@5.9.3))(sass@1.97.3)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.7)(@vitest/ui@3.2.4)(msw@2.12.7(@types/node@22.19.7)(typescript@5.3.3))(sass@1.97.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -18820,7 +18837,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.7)(@vitest/ui@3.2.4)(msw@2.12.7(@types/node@22.19.7)(typescript@5.9.3))(sass@1.97.3)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.7)(@vitest/ui@3.2.4)(msw@2.12.7(@types/node@22.19.7)(typescript@5.3.3))(sass@1.97.3)
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -19107,6 +19124,15 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - ws
+
+  autoprefixer@10.4.24(postcss@8.5.6):
+    dependencies:
+      browserslist: 4.28.1
+      caniuse-lite: 1.0.30001766
+      fraction.js: 5.3.4
+      picocolors: 1.1.1
+      postcss: 8.5.6
+      postcss-value-parser: 4.2.0
 
   available-typed-arrays@1.0.7:
     dependencies:
@@ -20160,7 +20186,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-easy-sort: 1.8.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      tailwind-merge: 3.4.1
+      tailwind-merge: 3.5.0
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
@@ -20941,6 +20967,8 @@ snapshots:
       - '@types/react'
 
   forwarded@0.2.0: {}
+
+  fraction.js@5.3.4: {}
 
   framer-motion@11.18.2(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -25736,6 +25764,8 @@ snapshots:
   tailwind-merge@1.14.0: {}
 
   tailwind-merge@3.4.1: {}
+
+  tailwind-merge@3.5.0: {}
 
   tailwindcss-animate@1.0.7(tailwindcss@3.4.1):
     dependencies:
