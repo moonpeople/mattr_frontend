@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react'
 import { Button } from 'ui/src/components/Button/Button'
 import { cn } from 'ui/src/lib/utils/cn'
 import announcement from '../Banners/data.json'
-import './styles.css'
 
 const PromoToast = () => {
   const [visible, setVisible] = useState(false)

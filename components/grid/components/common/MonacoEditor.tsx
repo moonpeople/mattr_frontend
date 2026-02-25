@@ -1,3 +1,5 @@
+'use client'
+
 import Editor from '@monaco-editor/react'
 
 type MonacoEditorProps = {
@@ -20,12 +22,16 @@ export const MonacoEditor = ({
   onMount,
 }: MonacoEditorProps) => {
   function handleEditorOnMount(editor: any) {
+    const zoneNode =
+      (globalThis as any)?.document?.createElement?.('div') ??
+      ({ style: {} } as any)
+
     // add margin above first line
     editor.changeViewZones((accessor: any) => {
       accessor.addZone({
         afterLineNumber: 0,
         heightInPx: 4,
-        domNode: document.createElement('div'),
+        domNode: zoneNode,
       })
     })
 

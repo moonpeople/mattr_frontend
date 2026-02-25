@@ -63,9 +63,9 @@ function BaseEditor<TRow, TSummaryRow = unknown>({
 
   useEffect(() => {
     try {
-      ref.current?.focus({ preventScroll: true })
+      ;(ref.current as any)?.focus?.({ preventScroll: true })
     } catch (e) {
-      ref.current?.focus()
+      ;(ref.current as any)?.focus?.()
     }
   }, [])
 
@@ -76,7 +76,7 @@ function BaseEditor<TRow, TSummaryRow = unknown>({
           {value === null ? 'NULL' : value}
         </div>
       </PopoverTrigger_Shadcn_>
-      <PopoverContent_Shadcn_ portal align="start" className="p-0 rounded-none w-64">
+      <PopoverContent_Shadcn_ align="start" className="p-0 rounded-none w-64">
         <BlockKeys
           ignoreOutsideClicks
           value={inputValue}
@@ -87,7 +87,7 @@ function BaseEditor<TRow, TSummaryRow = unknown>({
             ref={ref}
             value={inputValue ?? ''}
             placeholder={format}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e: any) => setInputValue((e?.target as any)?.value ?? '')}
             className="border-0 rounded-none bg-dash-sidebar outline-none !ring-0 !ring-offset-0"
           />
         </BlockKeys>

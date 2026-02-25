@@ -4,6 +4,16 @@ function includes(array: string[], element: string) {
   return array.indexOf(element) >= 0
 }
 
+type ShortcutKeyboardEvent = {
+  key: string
+  metaKey: boolean
+  shiftKey: boolean
+  ctrlKey: boolean
+  preventDefault: () => void
+  stopPropagation: () => void
+  target: Record<string, unknown> | null
+}
+
 /**
  * Hook for listening on key events.
  *
@@ -15,17 +25,27 @@ function includes(array: string[], element: string) {
  *                                  trigger shortcut event
  */
 export function useKeyboardShortcuts(
-  keyMap: { [id: KeyboardEvent['key']]: (event: KeyboardEvent) => void },
+  keyMap: Record<string, (event: ShortcutKeyboardEvent) => void>,
   whitelistNodes: string[] = [],
   whitelistClasses: string[] = []
 ) {
   const [lastKeydown, setLastKeydown] = React.useState<string | null>()
 
-  const handleKeydown = (event: any) => {
+  const asShortcutKeyboardEvent = (event: Event): ShortcutKeyboardEvent =>
+    event as unknown as ShortcutKeyboardEvent
+
+  const handleKeydown = (rawEvent: Event) => {
+    const event = asShortcutKeyboardEvent(rawEvent)
+    const target = event.target
+    const targetNode =
+      typeof target?.nodeName === 'string' ? target.nodeName : ''
+    const targetClassName =
+      typeof target?.className === 'string' ? target.className : ''
+
     if (
       !keyMap ||
-      includes(whitelistNodes, event.target.nodeName) ||
-      includes(whitelistClasses, event.target.className)
+      includes(whitelistNodes, targetNode) ||
+      includes(whitelistClasses, targetClassName)
     ) {
       return
     }
@@ -48,7 +68,8 @@ export function useKeyboardShortcuts(
     }
   }
 
-  const handleKeyup = (event: any) => {
+  const handleKeyup = (rawEvent: Event) => {
+    const event = asShortcutKeyboardEvent(rawEvent)
     if (!keyMap) return
 
     if (keyMap[event.key] && lastKeydown === event.key) {
@@ -58,7 +79,7 @@ export function useKeyboardShortcuts(
     }
   }
 
-  function getKeyPresses(event: KeyboardEvent) {
+  function getKeyPresses(event: ShortcutKeyboardEvent) {
     return event.metaKey && event.shiftKey
       ? `Command+Shift+${event.key}`
       : event.metaKey

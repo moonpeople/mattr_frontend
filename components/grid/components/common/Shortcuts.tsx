@@ -15,9 +15,10 @@ export function Shortcuts({ gridRef, rows }: ShortcutsProps) {
 
   const metaKey = useMemo(() => {
     function getClientOS() {
-      return navigator?.appVersion.indexOf('Win') !== -1
+      const userAgent = globalThis?.navigator?.userAgent ?? ''
+      return userAgent.includes('Win')
         ? 'windows'
-        : navigator?.appVersion.indexOf('Mac') !== -1
+        : userAgent.includes('Mac')
           ? 'macos'
           : 'unknown'
     }

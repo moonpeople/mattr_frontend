@@ -220,7 +220,7 @@ export const Pagination = ({ enableForeignRowsQuery = true }: PaginationProps) =
           className="w-10"
           min={1}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e: any) => setValue((e?.target as any)?.value ?? '')}
           onKeyDown={(e) => {
             const parsedValue = Number(value)
             if (
@@ -273,7 +273,7 @@ export const Pagination = ({ enableForeignRowsQuery = true }: PaginationProps) =
               min={1}
               max={maxPages}
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e: any) => setValue((e?.target as any)?.value ?? '')}
               onKeyDown={(e) => {
                 const parsedValue = Number(value)
                 if (

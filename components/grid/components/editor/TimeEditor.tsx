@@ -6,8 +6,8 @@ import customParseFormat from 'dayjs/plugin/customParseFormat'
 dayjs.extend(customParseFormat)
 
 function autoFocusAndSelect(input: HTMLInputElement | null) {
-  input?.focus()
-  input?.select()
+  ;(input as any)?.focus?.()
+  ;(input as any)?.select?.()
 }
 
 interface TimeEditorProps<TRow, TSummaryRow = unknown>
@@ -31,8 +31,8 @@ function BaseEditor<TRow, TSummaryRow = unknown>({
   const value = row[column.key as keyof TRow] as unknown as string
   const timeValue = value ? dayjs(value, format).format(INPUT_TIME_FORMAT) : value
 
-  function onChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const _value = event.target.value
+  function onChange(event: any) {
+    const _value = (event?.target as any)?.value
     if (_value == '') {
       onRowChange({ ...row, [column.key]: null })
     } else {

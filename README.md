@@ -18,6 +18,19 @@ pnpm dev
 ```
 Если переменная не задана, портал покажет sample-данные (ничего не ломает).
 
+## Production (Docker)
+
+Подробный runbook: `docs/production_deployment_ru.md`.
+
+Коротко:
+
+```bash
+cp .env.production.example .env.production
+# заполнить переменные
+docker compose -f docker-compose.production.yml build
+docker compose -f docker-compose.production.yml up -d
+```
+
 ## Ожидаемые эндпоинты
 - `GET /api/platform/organizations` → [{ id, name, slug }]
 - `GET /api/platform/organizations/:slug/projects` → [{ id, ref, name, organization_slug, project_type ∈ {base, iot} }]
