@@ -26,10 +26,23 @@ pnpm dev
 
 ```bash
 cp .env.production.example .env.production
-# заполнить переменные
-docker compose -f docker-compose.production.yml build
+# заполнить переменные (включая PORTAL_IMAGE)
+docker compose -f docker-compose.production.yml pull
 docker compose -f docker-compose.production.yml up -d
 ```
+
+## CI: сборка и push образа
+
+В репозитории есть workflow: `.github/workflows/portal-image.yml`.
+
+Нужно задать в GitHub:
+- `Repository variables`:
+  - `PORTAL_REGISTRY_IMAGE` (пример: `registry.mattr.ru/mattr/mattr-portal`)
+  - `PORTAL_REGISTRY_USERNAME` (для `mattr-registry` по умолчанию: `registry`)
+  - `PORTAL_REGISTRY_HOST` (опционально; если пусто, берется из `PORTAL_REGISTRY_IMAGE`)
+- `Repository secrets`:
+  - `PORTAL_REGISTRY_PASSWORD` (обязательно для `mattr-registry`)
+  - `PORTAL_DOTENV_PRODUCTION` (опционально, полный текст `.env.production` для build-time `NEXT_PUBLIC_*`)
 
 ## Ожидаемые эндпоинты
 - `GET /api/platform/organizations` → [{ id, name, slug }]

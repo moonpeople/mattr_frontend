@@ -1,9 +1,8 @@
 services:
   portal:
     container_name: mattr-portal
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${PORTAL_IMAGE:?PORTAL_IMAGE is required}
+    pull_policy: always
     restart: unless-stopped
     env_file:
       - ${PORTAL_ENV_FILE:-.env.production}

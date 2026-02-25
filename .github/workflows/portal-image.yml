@@ -1,0 +1,94 @@
+name: Build and Push Portal Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Dockerfile"
+      - "docker-compose.production.yml"
+      - ".github/workflows/portal-image.yml"
+      - ".env.production.example"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "next.config.mjs"
+      - "pages/**"
+      - "components/**"
+      - "lib/**"
+      - "packages/**"
+      - "styles/**"
+      - "public/**"
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      PORTAL_REGISTRY_IMAGE: ${{ vars.PORTAL_REGISTRY_IMAGE || 'registry.mattr.ru/mattr/mattr-portal' }}
+      PORTAL_REGISTRY_USERNAME: ${{ vars.PORTAL_REGISTRY_USERNAME || 'registry' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate CI Variables
+        run: |
+          if [ -z "$PORTAL_REGISTRY_IMAGE" ]; then
+            echo "Repository variable PORTAL_REGISTRY_IMAGE is required (example: registry.mattr.ru/mattr/mattr-portal)."
+            exit 1
+          fi
+          if [ -z "${{ secrets.PORTAL_REGISTRY_PASSWORD }}" ]; then
+            echo "Repository secret PORTAL_REGISTRY_PASSWORD is required."
+            exit 1
+          fi
+
+      - name: Prepare .env.production for Next build
+        run: |
+          if [ -n "${{ secrets.PORTAL_DOTENV_PRODUCTION }}" ]; then
+            printf "%s" "${{ secrets.PORTAL_DOTENV_PRODUCTION }}" > .env.production
+            echo "Using .env.production from secret PORTAL_DOTENV_PRODUCTION"
+          else
+            cp .env.production.example .env.production
+            echo "Using .env.production.example fallback"
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Registry
+        run: |
+          REGISTRY_HOST="${{ vars.PORTAL_REGISTRY_HOST }}"
+          if [ -z "$REGISTRY_HOST" ]; then
+            REGISTRY_HOST="$(echo "$PORTAL_REGISTRY_IMAGE" | cut -d/ -f1)"
+          fi
+          echo "${{ secrets.PORTAL_REGISTRY_PASSWORD }}" | docker login "$REGISTRY_HOST" -u "$PORTAL_REGISTRY_USERNAME" --password-stdin
+
+      - name: Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.PORTAL_REGISTRY_IMAGE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=sha,prefix=sha-
+
+      - name: Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image Summary
+        run: |
+          echo "Pushed images:"
+          echo "${{ steps.meta.outputs.tags }}"
