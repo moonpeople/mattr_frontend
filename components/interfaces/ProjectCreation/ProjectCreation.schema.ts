@@ -20,6 +20,9 @@ export const FormSchema = z
       required_error: 'Please select a cloud provider.',
     }),
     projectType: z.enum(['base', 'iot']).default('base'),
+    iotDashboardAccessMode: z.enum(['basic', 'portal', 'hybrid']).default('basic'),
+    iotDashboardHost: z.string().trim().default(''),
+    iotDashboardPortalHost: z.string().trim().default(''),
 
     dbPass: z.string().default(''),
     dbPassStrength: z

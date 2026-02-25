@@ -15,6 +15,7 @@ import { CustomPostgresVersionInput } from 'components/interfaces/ProjectCreatio
 import { DatabasePasswordInput } from 'components/interfaces/ProjectCreation/DatabasePasswordInput'
 import { DisabledWarningDueToIncident } from 'components/interfaces/ProjectCreation/DisabledWarningDueToIncident'
 import { FreeProjectLimitWarning } from 'components/interfaces/ProjectCreation/FreeProjectLimitWarning'
+import { IotDashboardAccessSettings } from 'components/interfaces/ProjectCreation/IotDashboardAccessSettings'
 import { OrganizationSelector } from 'components/interfaces/ProjectCreation/OrganizationSelector'
 import {
   extractPostgresVersionDetails,
@@ -116,6 +117,9 @@ const Wizard: NextPageWithLayout = () => {
       projectName: projectName || '',
       postgresVersion: '',
       projectType: 'base',
+      iotDashboardAccessMode: 'basic',
+      iotDashboardHost: '',
+      iotDashboardPortalHost: '',
       cloudProvider: PROVIDERS[defaultProvider].id,
       dbPass: '',
       dbPassStrength: 0,
@@ -298,6 +302,9 @@ const Wizard: NextPageWithLayout = () => {
       dbRegion,
       postgresVersion,
       projectType,
+      iotDashboardAccessMode,
+      iotDashboardHost,
+      iotDashboardPortalHost,
       instanceSize,
       dataApi,
       useApiSchema,
@@ -332,6 +339,13 @@ const Wizard: NextPageWithLayout = () => {
       postgresEngine: useOrioleDb ? availableOrioleVersion?.postgres_engine : postgresEngine,
       releaseChannel: useOrioleDb ? availableOrioleVersion?.release_channel : releaseChannel,
       projectType,
+      ...(projectType === 'iot'
+        ? {
+            iotDashboardAccessMode,
+            iotDashboardHost,
+            iotDashboardPortalHost,
+          }
+        : {}),
       ...(projectType === 'iot'
         ? { dbRegion }
         : useRegionSelection
@@ -483,6 +497,8 @@ const Wizard: NextPageWithLayout = () => {
                       projectType={projectType}
                     />
 
+                    {isIotProject && <IotDashboardAccessSettings form={form} />}
+
                     {!isIotProject && showPostgresVersionSelector && (
                       <Panel.Content>
                         <FormField_Shadcn_
@@ -494,7 +510,7 @@ const Wizard: NextPageWithLayout = () => {
                               form={form}
                               cloudProvider={form.getValues('cloudProvider') as CloudProvider}
                               organizationSlug={slug}
-                              dbRegion={form.getValues('dbRegion')}
+                              dbRegion={form.getValues('dbRegion') ?? ''}
                             />
                           )}
                         />

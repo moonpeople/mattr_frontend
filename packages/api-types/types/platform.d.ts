@@ -3287,6 +3287,23 @@ export interface paths {
     patch: operations['SensitivityController_updateProjectSensitivity']
     trace?: never
   }
+  '/platform/projects/{ref}/settings/iot-dashboard': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** Updates IoT dashboard access settings */
+    patch: operations['IotDashboardController_updateIotDashboardSettings']
+    trace?: never
+  }
   '/platform/projects/{ref}/status': {
     parameters: {
       query?: never
@@ -7206,6 +7223,24 @@ export interface components {
     MarkSensitiveBody: {
       is_sensitive: boolean
     }
+    IotDashboardSettingsBody: {
+      iot_dashboard?: {
+        /** @enum {string} */
+        dashboard_access_mode?: 'basic' | 'portal' | 'hybrid'
+        dashboard_host?: string
+        dashboard_portal_host?: string
+      }
+    }
+    IotDashboardSettingsResponse: {
+      iot_config: {
+        /** @enum {string} */
+        dashboard_access_mode?: 'basic' | 'portal' | 'hybrid'
+        dashboard_host?: string
+        dashboard_portal_host?: string
+        dashboard_portal_url?: string
+        [key: string]: unknown
+      }
+    }
     Member: {
       gotrue_id: string
       is_sso_user: boolean | null
@@ -8142,6 +8177,8 @@ export interface components {
       name: string
       organization_id: number
       parent_project_ref?: string
+      /** @enum {string} */
+      project_type?: 'base' | 'iot' | 'builder'
       ref: string
       region: string
       restUrl: string
@@ -8219,6 +8256,14 @@ export interface components {
       name: string
       ref: string
       region: string
+      iot_config?: {
+        /** @enum {string} */
+        dashboard_access_mode?: 'basic' | 'portal' | 'hybrid'
+        dashboard_host?: string
+        dashboard_portal_host?: string
+        dashboard_portal_url?: string
+        [key: string]: unknown
+      }
       service_api_keys?: {
         api_key: string
         name: string
@@ -22232,6 +22277,67 @@ export interface operations {
         content?: never
       }
       /** @description Failed to update project */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  IotDashboardController_updateIotDashboardSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Project ref */
+        ref: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['IotDashboardSettingsBody']
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['IotDashboardSettingsResponse']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Forbidden action */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Rate limit exceeded */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Failed to update IoT dashboard settings */
       500: {
         headers: {
           [name: string]: unknown

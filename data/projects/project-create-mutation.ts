@@ -17,13 +17,16 @@ export type ProjectCreateVariables = {
   organizationSlug: string
   dbPass?: string
   projectType?: 'base' | 'iot'
+  iotDashboardAccessMode?: 'basic' | 'portal' | 'hybrid'
+  iotDashboardHost?: string
+  iotDashboardPortalHost?: string
   dbRegion?: string
   regionSelection?: CreateProjectBody['region_selection']
   dbSql?: string
   dbPricingTierId?: string
   cloudProvider?: string
   authSiteUrl?: string
-  customSupabaseRequest?: object
+  customSupabaseRequest?: CreateProjectBody['custom_supabase_internal_requests']
   dbInstanceSize?: DesiredInstanceSize
   dataApiExposedSchemas?: string[]
   dataApiUseApiSchema?: boolean
@@ -36,6 +39,9 @@ export async function createProject({
   organizationSlug,
   dbPass,
   projectType,
+  iotDashboardAccessMode,
+  iotDashboardHost,
+  iotDashboardPortalHost,
   dbRegion,
   regionSelection,
   dbSql,
@@ -48,7 +54,15 @@ export async function createProject({
   postgresEngine,
   releaseChannel,
 }: ProjectCreateVariables) {
-  const body: CreateProjectBody & { project_type?: 'base' | 'iot' } = {
+  const normalizedIotDashboardHost = iotDashboardHost?.trim()
+  const normalizedIotDashboardPortalHost = iotDashboardPortalHost?.trim()
+
+  const body: CreateProjectBody & {
+    project_type?: 'base' | 'iot'
+    iot_dashboard_access_mode?: 'basic' | 'portal' | 'hybrid'
+    iot_dashboard_host?: string
+    iot_dashboard_portal_host?: string
+  } = {
     cloud_provider: cloudProvider as CloudProvider,
     organization_slug: organizationSlug,
     name,
@@ -58,14 +72,23 @@ export async function createProject({
     region_selection: regionSelection,
     db_sql: dbSql,
     auth_site_url: authSiteUrl,
-    ...(customSupabaseRequest !== undefined && {
-      custom_supabase_internal_requests: customSupabaseRequest as any,
-    }),
+    ...(customSupabaseRequest !== undefined
+      ? { custom_supabase_internal_requests: customSupabaseRequest }
+      : {}),
     desired_instance_size: dbInstanceSize,
     data_api_exposed_schemas: dataApiExposedSchemas,
     data_api_use_api_schema: dataApiUseApiSchema,
     postgres_engine: postgresEngine,
     release_channel: releaseChannel,
+    ...(projectType === 'iot' && iotDashboardAccessMode
+      ? { iot_dashboard_access_mode: iotDashboardAccessMode }
+      : {}),
+    ...(projectType === 'iot' && normalizedIotDashboardHost
+      ? { iot_dashboard_host: normalizedIotDashboardHost }
+      : {}),
+    ...(projectType === 'iot' && normalizedIotDashboardPortalHost
+      ? { iot_dashboard_portal_host: normalizedIotDashboardPortalHost }
+      : {}),
   }
 
   const { data, error } = await post(`/platform/projects`, {
