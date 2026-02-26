@@ -29,7 +29,7 @@ jobs:
 
     env:
       PORTAL_REGISTRY_IMAGE: ${{ vars.PORTAL_REGISTRY_IMAGE || 'registry.mattr.ru/mattr/mattr-portal' }}
-      PORTAL_REGISTRY_USERNAME: ${{ vars.PORTAL_REGISTRY_USERNAME || 'registry' }}
+      REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
 
     steps:
       - name: Checkout
@@ -41,8 +41,12 @@ jobs:
             echo "Repository variable PORTAL_REGISTRY_IMAGE is required (example: registry.mattr.ru/mattr/mattr-portal)."
             exit 1
           fi
-          if [ -z "${{ secrets.PORTAL_REGISTRY_PASSWORD }}" ]; then
-            echo "Repository secret PORTAL_REGISTRY_PASSWORD is required."
+          if [ -z "$REGISTRY_USERNAME" ]; then
+            echo "Repository secret REGISTRY_USERNAME is required."
+            exit 1
+          fi
+          if [ -z "${{ secrets.REGISTRY_PASSWORD }}" ]; then
+            echo "Repository secret REGISTRY_PASSWORD is required."
             exit 1
           fi
 
@@ -61,11 +65,11 @@ jobs:
 
       - name: Login to Docker Registry
         run: |
-          REGISTRY_HOST="${{ vars.PORTAL_REGISTRY_HOST }}"
+          REGISTRY_HOST="${{ vars.REGISTRY_HOST }}"
           if [ -z "$REGISTRY_HOST" ]; then
             REGISTRY_HOST="$(echo "$PORTAL_REGISTRY_IMAGE" | cut -d/ -f1)"
           fi
-          echo "${{ secrets.PORTAL_REGISTRY_PASSWORD }}" | docker login "$REGISTRY_HOST" -u "$PORTAL_REGISTRY_USERNAME" --password-stdin
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login "$REGISTRY_HOST" -u "$REGISTRY_USERNAME" --password-stdin
 
       - name: Docker Metadata
         id: meta
