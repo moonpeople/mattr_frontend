@@ -18,19 +18,57 @@ const normalizePath = (path: string | string[] | undefined): string[] => {
   return []
 }
 
+const DASHBOARD_BASE_PATH = '/dashboard'
+const DEFAULT_NEXT_PATH = `${DASHBOARD_BASE_PATH}/project/default`
+
+const appendNestedPath = (basePath: string, path: string[]): string => {
+  if (path.length === 0) return basePath
+
+  const nestedPath = path
+    .map((segment) => encodeURIComponent(segment))
+    .join('/')
+
+  const normalizedBase = basePath.replace(/\/+$/, '')
+  return `${normalizedBase}/${nestedPath}`
+}
+
+const isPortalLoginPath = (pathname: string): boolean => {
+  const normalized = pathname.replace(/\/+$/, '')
+  return normalized === `${DASHBOARD_BASE_PATH}/portal-login`
+}
+
+const normalizeLegacyPortalTokenFlow = (target: URL): void => {
+  const token =
+    target.searchParams.get('token') ?? target.searchParams.get('portal_token')
+
+  // Backward compatibility:
+  // older launch URLs can send token directly to /dashboard/project/... .
+  // In that case static/API requests lose auth context because portal cookie
+  // is not set. Route through /dashboard/portal-login to issue the cookie.
+  if (!token || isPortalLoginPath(target.pathname)) return
+
+  const nextPath = target.pathname || DEFAULT_NEXT_PATH
+  target.pathname = `${DASHBOARD_BASE_PATH}/portal-login`
+  target.searchParams.delete('portal_token')
+  target.searchParams.set('token', token)
+  target.searchParams.set('next', nextPath)
+}
+
 const buildTargetUrl = (
   launchUrl: string,
   path: string[],
   search: string
 ): string => {
   const target = new URL(launchUrl)
+  normalizeLegacyPortalTokenFlow(target)
 
   if (path.length > 0) {
-    const basePath = target.pathname.replace(/\/+$/, '')
-    const nestedPath = path
-      .map((segment) => encodeURIComponent(segment))
-      .join('/')
-    target.pathname = `${basePath}/${nestedPath}`
+    if (isPortalLoginPath(target.pathname)) {
+      const currentNext = target.searchParams.get('next') || DEFAULT_NEXT_PATH
+      target.searchParams.set('next', appendNestedPath(currentNext, path))
+    } else {
+      target.pathname = appendNestedPath(target.pathname, path)
+    }
   }
 
   // Keep query params from launch URL (portal token/next) and only append
