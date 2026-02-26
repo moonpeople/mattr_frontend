@@ -33,7 +33,17 @@ const buildTargetUrl = (
     target.pathname = `${basePath}/${nestedPath}`
   }
 
-  target.search = search
+  // Keep query params from launch URL (portal token/next) and only append
+  // extra params from current location when they are not already present.
+  if (search) {
+    const incoming = new URLSearchParams(search)
+    incoming.forEach((value, key) => {
+      if (!target.searchParams.has(key)) {
+        target.searchParams.set(key, value)
+      }
+    })
+  }
+
   return target.toString()
 }
 
