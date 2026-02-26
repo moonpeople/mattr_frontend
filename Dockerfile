@@ -15,6 +15,9 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
 
+ARG NODE_BUILD_OPTIONS=--max-old-space-size=4096
+ENV NODE_OPTIONS=$NODE_BUILD_OPTIONS
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build
